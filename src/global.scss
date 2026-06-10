@@ -1,0 +1,146 @@
+/* Core CSS required for Ionic components to work properly */
+@import "@ionic/angular/css/core.css";
+
+/* Basic CSS for apps built with Ionic */
+@import "@ionic/angular/css/normalize.css";
+@import "@ionic/angular/css/structure.css";
+@import "@ionic/angular/css/typography.css";
+@import "@ionic/angular/css/display.css";
+
+/* Optional CSS utils */
+@import "@ionic/angular/css/padding.css";
+@import "@ionic/angular/css/float-elements.css";
+@import "@ionic/angular/css/text-alignment.css";
+@import "@ionic/angular/css/text-transformation.css";
+@import "@ionic/angular/css/flex-utils.css";
+
+@import "@ionic/angular/css/palettes/dark.system.css";
+
+/* ──────────────────────────────────────────
+   App-wide shared styles
+   ────────────────────────────────────────── */
+
+// Auth page
+.auth-content {
+  --background: linear-gradient(160deg, var(--ion-color-primary) 0%, var(--ion-color-primary-shade) 40%, #f4f5f8 40%);
+}
+
+.auth-container {
+  max-width: 420px;
+  margin: 0 auto;
+  padding-top: 24px;
+}
+
+.auth-logo {
+  text-align: center;
+  padding: 32px 16px 24px;
+  color: white;
+
+  ion-icon {
+    font-size: 56px;
+    margin-bottom: 8px;
+  }
+  h1 {
+    font-size: 24px;
+    font-weight: 700;
+    margin: 0 0 4px;
+    color: white;
+  }
+  p {
+    font-size: 14px;
+    opacity: 0.85;
+    margin: 0;
+    color: white;
+  }
+}
+
+.error-msg {
+  font-size: 12px;
+  color: var(--ion-color-danger);
+  padding: 2px 16px 6px;
+}
+
+.input-item {
+  --background: var(--ion-color-light);
+  --border-radius: 10px;
+  margin-bottom: 10px;
+}
+
+// Month navigation bar shared across tabs
+.month-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+
+  .month-title {
+    font-size: 16px;
+    font-weight: 600;
+    text-transform: capitalize;
+  }
+}
+
+.month-label {
+  font-size: 13px;
+  color: var(--ion-color-medium);
+  text-transform: capitalize;
+  margin: 0 0 8px;
+}
+
+// KPI cards
+.balance-card ion-card-content {
+  padding: 20px;
+
+  .kpi-label {
+    font-size: 12px;
+    opacity: 0.85;
+    margin: 0 0 4px;
+  }
+  .kpi-value {
+    font-size: 28px;
+    font-weight: 700;
+    margin: 0;
+  }
+}
+
+.kpi-card ion-card-content {
+  padding: 14px;
+  ion-icon { font-size: 20px; display: block; margin-bottom: 4px; }
+  .kpi-label { font-size: 11px; color: var(--ion-color-medium); margin: 0; }
+  .kpi-val { font-size: 16px; font-weight: 600; margin: 0; }
+}
+
+// Budget row
+.budget-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+// Stat labels inside comparison cards
+.stat-lbl {
+  font-size: 11px;
+  color: var(--ion-color-medium);
+  margin: 0 0 4px;
+}
+
+// Category list items inside cards
+.cat-item {
+  --min-height: 36px;
+  font-size: 13px;
+}
+
+// Mode note in recurrentes modal
+.mode-note {
+  display: block;
+  font-size: 12px;
+  color: var(--ion-color-medium);
+  padding: 8px 16px;
+
+  ion-icon {
+    vertical-align: middle;
+    margin-right: 4px;
+  }
+}

@@ -1,0 +1,90 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>
+      <ng-container *ngIf="user$ | async as user">Hola, {{ user.name }}</ng-container>
+    </ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="logout()">
+        <ion-icon slot="icon-only" name="log-out-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <ion-refresher slot="fixed" (ionRefresh)="loadData(); $event.target.complete()">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  <div class="ion-padding">
+    <p class="month-label">{{ monthName }} {{ year }}</p>
+
+    <!-- KPI Cards -->
+    <ng-container *ngIf="!isLoading && summary as s">
+      <ion-card [color]="balance >= 0 ? 'success' : 'danger'" class="balance-card">
+        <ion-card-content class="ion-text-center">
+          <p class="kpi-label">Balance del mes</p>
+          <h2 class="kpi-value">{{ balance | currency:'COP':'symbol':'1.0-0' }}</h2>
+        </ion-card-content>
+      </ion-card>
+
+      <ion-grid>
+        <ion-row>
+          <ion-col size="6">
+            <ion-card>
+              <ion-card-content>
+                <ion-icon name="trending-up-outline" color="success"></ion-icon>
+                <p class="kpi-label">Ingresos</p>
+                <p class="kpi-val">{{ s.totalIncomes | currency:'COP':'symbol':'1.0-0' }}</p>
+              </ion-card-content>
+            </ion-card>
+          </ion-col>
+          <ion-col size="6">
+            <ion-card>
+              <ion-card-content>
+                <ion-icon name="trending-down-outline" color="danger"></ion-icon>
+                <p class="kpi-label">Gastos</p>
+                <p class="kpi-val">{{ s.totalExpenses | currency:'COP':'symbol':'1.0-0' }}</p>
+              </ion-card-content>
+            </ion-card>
+          </ion-col>
+        </ion-row>
+      </ion-grid>
+
+      <!-- Budget progress -->
+      <ion-card *ngIf="budgetTotal > 0">
+        <ion-card-header>
+          <ion-card-subtitle>Presupuesto mensual</ion-card-subtitle>
+        </ion-card-header>
+        <ion-card-content>
+          <div class="budget-row">
+            <span>{{ budgetPercent | number:'1.0-0' }}% usado</span>
+            <span>{{ budgetTotal | currency:'COP':'symbol':'1.0-0' }}</span>
+          </div>
+          <ion-progress-bar [value]="budgetPercent / 100" [color]="budgetColor"></ion-progress-bar>
+        </ion-card-content>
+      </ion-card>
+
+      <!-- Donut chart by category -->
+      <ion-card *ngIf="s.byCategory?.length">
+        <ion-card-header>
+          <ion-card-subtitle>Gastos por categoría</ion-card-subtitle>
+        </ion-card-header>
+        <ion-card-content>
+          <canvas #donutCanvas style="max-height: 280px;"></canvas>
+        </ion-card-content>
+      </ion-card>
+    </ng-container>
+
+    <!-- Loading -->
+    <div *ngIf="isLoading" class="ion-text-center ion-padding">
+      <ion-spinner name="crescent" color="primary"></ion-spinner>
+    </div>
+
+    <!-- Empty state -->
+    <div *ngIf="!isLoading && !summary" class="ion-text-center ion-padding">
+      <ion-icon name="wallet-outline" size="large" color="medium"></ion-icon>
+      <p>Sin datos para este mes</p>
+    </div>
+  </div>
+</ion-content>

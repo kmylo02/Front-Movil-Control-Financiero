@@ -1,0 +1,50 @@
+<ion-content class="ion-padding auth-content">
+  <div class="auth-container">
+    <div class="auth-logo">
+      <ion-icon name="wallet-outline" color="primary"></ion-icon>
+      <h1>Control Financiero</h1>
+      <p>Gestiona tus finanzas personales</p>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+      <ion-list lines="none">
+        <ion-item class="input-item">
+          <ion-label position="stacked">Correo electrónico</ion-label>
+          <ion-input
+            type="email"
+            formControlName="email"
+            placeholder="tu@email.com"
+            autocomplete="email">
+          </ion-input>
+        </ion-item>
+        <div class="error-msg" *ngIf="form.get('email')?.invalid && form.get('email')?.touched">
+          Ingresa un correo válido
+        </div>
+
+        <ion-item class="input-item">
+          <ion-label position="stacked">Contraseña</ion-label>
+          <ion-input
+            [type]="showPassword ? 'text' : 'password'"
+            formControlName="password"
+            placeholder="••••••">
+          </ion-input>
+          <ion-button slot="end" fill="clear" (click)="showPassword = !showPassword">
+            <ion-icon [name]="showPassword ? 'eye-off-outline' : 'eye-outline'"></ion-icon>
+          </ion-button>
+        </ion-item>
+        <div class="error-msg" *ngIf="form.get('password')?.invalid && form.get('password')?.touched">
+          Mínimo 6 caracteres
+        </div>
+      </ion-list>
+
+      <ion-button expand="block" type="submit" class="ion-margin-top">
+        <ion-icon name="log-in-outline" slot="start"></ion-icon>
+        Iniciar Sesión
+      </ion-button>
+
+      <ion-button expand="block" fill="clear" (click)="goRegister()" class="ion-margin-top">
+        ¿No tienes cuenta? <strong>&nbsp;Regístrate</strong>
+      </ion-button>
+    </form>
+  </div>
+</ion-content>

@@ -1,0 +1,140 @@
+<ion-header>
+  <ion-toolbar color="tertiary">
+    <ion-title>Recurrentes</ion-title>
+  </ion-toolbar>
+  <ion-toolbar>
+    <ion-segment [(ngModel)]="selectedSegment">
+      <ion-segment-button value="lista">
+        <ion-label>Todos</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="pendientes">
+        <ion-label>
+          Pendientes
+          <ion-badge *ngIf="pending.length > 0" color="danger">{{ pending.length }}</ion-badge>
+        </ion-label>
+      </ion-segment-button>
+    </ion-segment>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <ion-refresher slot="fixed" (ionRefresh)="loadData(); $event.target.complete()">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  <div *ngIf="isLoading" class="ion-text-center ion-padding">
+    <ion-spinner name="crescent" color="tertiary"></ion-spinner>
+  </div>
+
+  <!-- Lista todos -->
+  <ion-list *ngIf="!isLoading && selectedSegment === 'lista'">
+    <ion-item-sliding *ngFor="let r of recurrentes">
+      <ion-item>
+        <ion-icon slot="start" [name]="getModeIcon(r.mode)" color="tertiary"></ion-icon>
+        <ion-label>
+          <h3>{{ r.name }}</h3>
+          <p>{{ getCategoryName(r.categoryId) }} · Día {{ r.dayOfMonth }}</p>
+          <p>
+            <ion-badge [color]="r.mode === 'auto' ? 'primary' : r.mode === 'manual' ? 'warning' : 'medium'">
+              {{ getModeLabel(r.mode) }}
+            </ion-badge>
+          </p>
+        </ion-label>
+        <ion-note slot="end">{{ r.amount | currency:'COP':'symbol':'1.0-0' }}</ion-note>
+      </ion-item>
+      <ion-item-options side="end">
+        <ion-item-option color="primary" (click)="openEdit(r)">
+          <ion-icon slot="icon-only" name="pencil-outline"></ion-icon>
+        </ion-item-option>
+        <ion-item-option color="danger" (click)="onDelete(r)">
+          <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+        </ion-item-option>
+      </ion-item-options>
+    </ion-item-sliding>
+    <ion-item *ngIf="recurrentes.length === 0">
+      <ion-label class="ion-text-center" color="medium">No hay recurrentes configurados</ion-label>
+    </ion-item>
+  </ion-list>
+
+  <!-- Pendientes -->
+  <ion-list *ngIf="!isLoading && selectedSegment === 'pendientes'">
+    <ion-item *ngFor="let r of pending">
+      <ion-icon slot="start" name="alert-circle-outline" color="warning"></ion-icon>
+      <ion-label>
+        <h3>{{ r.name }}</h3>
+        <p>{{ r.amount | currency:'COP':'symbol':'1.0-0' }} · {{ getModeLabel(r.mode) }}</p>
+      </ion-label>
+      <ion-button slot="end" fill="outline" color="success" size="small" (click)="activatePending(r)">
+        <ion-icon slot="start" name="checkmark-outline"></ion-icon>
+        Confirmar
+      </ion-button>
+    </ion-item>
+    <ion-item *ngIf="pending.length === 0">
+      <ion-label class="ion-text-center" color="medium">Sin pendientes este mes</ion-label>
+    </ion-item>
+  </ion-list>
+
+  <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+    <ion-fab-button color="tertiary" (click)="openAdd()">
+      <ion-icon name="add"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
+</ion-content>
+
+<ion-modal [isOpen]="showModal" (didDismiss)="closeModal()">
+  <ng-template>
+    <ion-header>
+      <ion-toolbar color="tertiary">
+        <ion-title>{{ editingId ? 'Editar' : 'Nuevo' }} Recurrente</ion-title>
+        <ion-buttons slot="end">
+          <ion-button (click)="closeModal()">
+            <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+          </ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
+    <ion-content class="ion-padding">
+      <form [formGroup]="form" (ngSubmit)="onSave()">
+        <ion-list lines="none">
+          <ion-item>
+            <ion-label position="stacked">Nombre *</ion-label>
+            <ion-input formControlName="name" placeholder="Ej: Netflix"></ion-input>
+          </ion-item>
+          <ion-item>
+            <ion-label position="stacked">Monto *</ion-label>
+            <ion-input type="number" formControlName="amount" placeholder="0"></ion-input>
+          </ion-item>
+          <ion-item>
+            <ion-label position="stacked">Categoría *</ion-label>
+            <ion-select formControlName="categoryId" placeholder="Selecciona">
+              <ion-select-option *ngFor="let cat of categories" [value]="cat._id">{{ cat.name }}</ion-select-option>
+            </ion-select>
+          </ion-item>
+          <ion-item>
+            <ion-label position="stacked">Modo *</ion-label>
+            <ion-select formControlName="mode">
+              <ion-select-option *ngFor="let m of modes" [value]="m.value">{{ m.label }}</ion-select-option>
+            </ion-select>
+          </ion-item>
+          <ion-item>
+            <ion-label position="stacked">Día del mes *</ion-label>
+            <ion-input type="number" formControlName="dayOfMonth" placeholder="1-31"></ion-input>
+          </ion-item>
+        </ion-list>
+
+        <ion-note class="ion-padding ion-display-block">
+          <ng-container *ngFor="let m of modes">
+            <span *ngIf="form.get('mode')?.value === m.value">
+              <ion-icon [name]="m.icon"></ion-icon> {{ m.desc }}
+            </span>
+          </ng-container>
+        </ion-note>
+
+        <ion-button expand="block" type="submit" color="tertiary" class="ion-margin-top" [disabled]="form.invalid">
+          <ion-icon name="save-outline" slot="start"></ion-icon>
+          Guardar
+        </ion-button>
+      </form>
+    </ion-content>
+  </ng-template>
+</ion-modal>

@@ -1,0 +1,115 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>Gastos</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <ion-refresher slot="fixed" (ionRefresh)="loadData(); $event.target.complete()">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  <div class="month-nav ion-padding-horizontal">
+    <ion-button fill="clear" size="small" (click)="prevMonth()">
+      <ion-icon slot="icon-only" name="chevron-back-outline"></ion-icon>
+    </ion-button>
+    <span class="month-title">{{ monthName }} {{ year }}</span>
+    <ion-button fill="clear" size="small" (click)="nextMonth()">
+      <ion-icon slot="icon-only" name="chevron-forward-outline"></ion-icon>
+    </ion-button>
+  </div>
+
+  <div class="ion-padding-horizontal ion-padding-bottom">
+    <ion-chip color="danger" outline>
+      <ion-icon name="trending-down-outline"></ion-icon>
+      <ion-label>Total: {{ total | currency:'COP':'symbol':'1.0-0' }}</ion-label>
+    </ion-chip>
+  </div>
+
+  <div *ngIf="isLoading" class="ion-text-center ion-padding">
+    <ion-spinner name="crescent" color="primary"></ion-spinner>
+  </div>
+
+  <ion-list *ngIf="!isLoading">
+    <ion-item-sliding *ngFor="let expense of expenses">
+      <ion-item>
+        <ion-icon
+          slot="start"
+          [name]="isHormiga(expense) ? 'bug-outline' : 'receipt-outline'"
+          [color]="isHormiga(expense) ? 'warning' : 'medium'">
+        </ion-icon>
+        <ion-label>
+          <h3>{{ expense.description }}</h3>
+          <p>{{ getCategoryName(expense.categoryId) }} · {{ expense.date | date:'dd/MM/yyyy' }}</p>
+        </ion-label>
+        <ion-note slot="end" color="danger">
+          {{ expense.amount | currency:'COP':'symbol':'1.0-0' }}
+        </ion-note>
+      </ion-item>
+      <ion-item-options side="end">
+        <ion-item-option color="primary" (click)="openEdit(expense)">
+          <ion-icon slot="icon-only" name="pencil-outline"></ion-icon>
+        </ion-item-option>
+        <ion-item-option color="danger" (click)="onDelete(expense)">
+          <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+        </ion-item-option>
+      </ion-item-options>
+    </ion-item-sliding>
+    <ion-item *ngIf="expenses.length === 0">
+      <ion-label class="ion-text-center" color="medium">Sin gastos este mes</ion-label>
+    </ion-item>
+  </ion-list>
+
+  <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+    <ion-fab-button color="primary" (click)="openAdd()">
+      <ion-icon name="add"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
+</ion-content>
+
+<ion-modal [isOpen]="showModal" (didDismiss)="closeModal()">
+  <ng-template>
+    <ion-header>
+      <ion-toolbar color="primary">
+        <ion-title>{{ editingId ? 'Editar' : 'Nuevo' }} Gasto</ion-title>
+        <ion-buttons slot="end">
+          <ion-button (click)="closeModal()">
+            <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+          </ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
+    <ion-content class="ion-padding">
+      <form [formGroup]="form" (ngSubmit)="onSave()">
+        <ion-list lines="none">
+          <ion-item>
+            <ion-label position="stacked">Descripción *</ion-label>
+            <ion-input formControlName="description" placeholder="Ej: Mercado"></ion-input>
+          </ion-item>
+          <ion-item>
+            <ion-label position="stacked">Monto *</ion-label>
+            <ion-input type="number" formControlName="amount" placeholder="0"></ion-input>
+          </ion-item>
+          <ion-item>
+            <ion-label position="stacked">Categoría *</ion-label>
+            <ion-select formControlName="categoryId" placeholder="Selecciona">
+              <ion-select-option *ngFor="let cat of categories" [value]="cat._id">{{ cat.name }}</ion-select-option>
+            </ion-select>
+          </ion-item>
+          <ion-item>
+            <ion-label position="stacked">Fecha *</ion-label>
+            <ion-input type="date" formControlName="date"></ion-input>
+          </ion-item>
+          <ion-item>
+            <ion-label position="stacked">Notas</ion-label>
+            <ion-textarea formControlName="notes" rows="2" placeholder="Opcional"></ion-textarea>
+          </ion-item>
+        </ion-list>
+        <ion-button expand="block" type="submit" class="ion-margin-top" [disabled]="form.invalid">
+          <ion-icon name="save-outline" slot="start"></ion-icon>
+          Guardar
+        </ion-button>
+      </form>
+    </ion-content>
+  </ng-template>
+</ion-modal>

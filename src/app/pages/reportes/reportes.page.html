@@ -1,0 +1,145 @@
+<ion-header>
+  <ion-toolbar color="warning">
+    <ion-title>Reportes</ion-title>
+  </ion-toolbar>
+  <ion-toolbar>
+    <ion-segment [(ngModel)]="selectedSegment">
+      <ion-segment-button value="reportes">
+        <ion-label>Reportes</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="presupuesto">
+        <ion-label>Presupuesto</ion-label>
+      </ion-segment-button>
+    </ion-segment>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <ion-refresher slot="fixed" (ionRefresh)="loadData(); $event.target.complete()">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  <div class="month-nav ion-padding-horizontal">
+    <ion-button fill="clear" size="small" (click)="prevMonth()">
+      <ion-icon slot="icon-only" name="chevron-back-outline"></ion-icon>
+    </ion-button>
+    <span class="month-title">{{ monthName }} {{ year }}</span>
+    <ion-button fill="clear" size="small" (click)="nextMonth()">
+      <ion-icon slot="icon-only" name="chevron-forward-outline"></ion-icon>
+    </ion-button>
+  </div>
+
+  <div *ngIf="isLoading" class="ion-text-center ion-padding">
+    <ion-spinner name="crescent" color="warning"></ion-spinner>
+  </div>
+
+  <!-- REPORTES -->
+  <div *ngIf="!isLoading && selectedSegment === 'reportes'">
+    <ion-card *ngIf="comparison">
+      <ion-card-header>
+        <ion-card-subtitle>Comparativa de gastos</ion-card-subtitle>
+      </ion-card-header>
+      <ion-card-content>
+        <canvas #barCanvas style="max-height: 220px;"></canvas>
+      </ion-card-content>
+    </ion-card>
+
+    <ion-card *ngIf="comparison as c">
+      <ion-card-header><ion-card-subtitle>Variaciones</ion-card-subtitle></ion-card-header>
+      <ion-card-content>
+        <ion-grid>
+          <ion-row>
+            <ion-col size="6" class="ion-text-center">
+              <p class="stat-lbl">vs Mes anterior</p>
+              <ion-badge [color]="diffColor(c.current.expenses, c.previousMonth.expenses)">
+                {{ diffPercent(c.current.expenses, c.previousMonth.expenses) }}
+              </ion-badge>
+            </ion-col>
+            <ion-col size="6" class="ion-text-center">
+              <p class="stat-lbl">vs Año anterior</p>
+              <ion-badge [color]="diffColor(c.current.expenses, c.sameMonthLastYear.expenses)">
+                {{ diffPercent(c.current.expenses, c.sameMonthLastYear.expenses) }}
+              </ion-badge>
+            </ion-col>
+          </ion-row>
+        </ion-grid>
+      </ion-card-content>
+    </ion-card>
+
+    <ion-card *ngIf="summary?.byCategory?.length">
+      <ion-card-header><ion-card-subtitle>Por categoría</ion-card-subtitle></ion-card-header>
+      <ion-card-content>
+        <ion-item *ngFor="let cat of summary!.byCategory" lines="none">
+          <ion-label>{{ cat.category.name }}</ion-label>
+          <ion-note slot="end">{{ cat.total | currency:'COP':'symbol':'1.0-0' }}</ion-note>
+        </ion-item>
+      </ion-card-content>
+    </ion-card>
+  </div>
+
+  <!-- PRESUPUESTO -->
+  <div *ngIf="!isLoading && selectedSegment === 'presupuesto'" class="ion-padding">
+    <ion-card *ngIf="budgetTotal > 0">
+      <ion-card-header>
+        <ion-card-subtitle>Presupuesto {{ monthName }} {{ year }}</ion-card-subtitle>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-item lines="none">
+          <ion-label>Presupuesto</ion-label>
+          <ion-note slot="end">{{ budgetTotal | currency:'COP':'symbol':'1.0-0' }}</ion-note>
+        </ion-item>
+        <ion-item lines="none">
+          <ion-label>Gastado</ion-label>
+          <ion-note slot="end" color="danger">{{ budgetSpent | currency:'COP':'symbol':'1.0-0' }}</ion-note>
+        </ion-item>
+        <ion-item lines="none">
+          <ion-label>Disponible</ion-label>
+          <ion-note slot="end" [color]="(budgetTotal - budgetSpent) >= 0 ? 'success' : 'danger'">
+            {{ (budgetTotal - budgetSpent) | currency:'COP':'symbol':'1.0-0' }}
+          </ion-note>
+        </ion-item>
+        <ion-progress-bar [value]="budgetPercent / 100" [color]="budgetColor" class="ion-margin-top"></ion-progress-bar>
+        <p class="ion-text-center ion-margin-top">{{ budgetPercent | number:'1.0-0' }}% usado</p>
+      </ion-card-content>
+    </ion-card>
+
+    <ion-card *ngIf="budgetTotal === 0">
+      <ion-card-content class="ion-text-center">
+        <ion-icon name="wallet-outline" size="large" color="medium"></ion-icon>
+        <p color="medium">Sin presupuesto para este mes</p>
+      </ion-card-content>
+    </ion-card>
+
+    <ion-button expand="block" (click)="openBudgetModal()">
+      <ion-icon name="create-outline" slot="start"></ion-icon>
+      {{ budgetTotal > 0 ? 'Editar presupuesto' : 'Establecer presupuesto' }}
+    </ion-button>
+  </div>
+</ion-content>
+
+<ion-modal [isOpen]="showBudgetModal" (didDismiss)="closeBudgetModal()" [initialBreakpoint]="0.5" [breakpoints]="[0, 0.5]">
+  <ng-template>
+    <ion-header>
+      <ion-toolbar>
+        <ion-title>Presupuesto mensual</ion-title>
+        <ion-buttons slot="end">
+          <ion-button (click)="closeBudgetModal()">
+            <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+          </ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
+    <ion-content class="ion-padding">
+      <form [formGroup]="budgetForm" (ngSubmit)="saveBudget()">
+        <ion-item>
+          <ion-label position="stacked">Límite total ({{ year }}/{{ month }})</ion-label>
+          <ion-input type="number" formControlName="totalLimit" placeholder="0"></ion-input>
+        </ion-item>
+        <ion-button expand="block" type="submit" class="ion-margin-top" [disabled]="budgetForm.invalid">
+          <ion-icon name="save-outline" slot="start"></ion-icon>
+          Guardar
+        </ion-button>
+      </form>
+    </ion-content>
+  </ng-template>
+</ion-modal>
