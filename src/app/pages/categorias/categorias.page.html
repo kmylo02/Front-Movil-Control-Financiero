@@ -1,0 +1,66 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/tabs/dashboard"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Categorías</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="openForm()">
+        <ion-icon slot="icon-only" name="add-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+  <ion-toolbar>
+    <ion-segment [(ngModel)]="segment">
+      <ion-segment-button value="expense">Gastos</ion-segment-button>
+      <ion-segment-button value="income">Ingresos</ion-segment-button>
+    </ion-segment>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <ion-refresher slot="fixed" (ionRefresh)="load(); $event.target.complete()">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  <div *ngIf="loading" class="ion-text-center ion-padding">
+    <ion-spinner name="crescent" color="primary"></ion-spinner>
+  </div>
+
+  <ion-list *ngIf="!loading">
+    <ion-item *ngIf="filtered.length === 0" lines="none">
+      <ion-label class="ion-text-center ion-padding">
+        <p>Sin categorías. Pulsa + para crear una.</p>
+      </ion-label>
+    </ion-item>
+
+    <ion-item-sliding *ngFor="let cat of filtered">
+      <ion-item>
+        <div class="color-ball" [style.background]="cat.color" slot="start"></div>
+        <ion-label>
+          <h3>{{ cat.name }}</h3>
+          <p>{{ cat.type === 'both' ? 'Gastos e ingresos' : cat.type === 'expense' ? 'Gastos' : 'Ingresos' }}</p>
+        </ion-label>
+        <ion-note slot="end" *ngIf="cat.isDefault">Por defecto</ion-note>
+        <ion-button slot="end" fill="clear" (click)="pickColor(cat)" *ngIf="!cat.isDefault">
+          <ion-icon slot="icon-only" name="color-palette-outline"></ion-icon>
+        </ion-button>
+      </ion-item>
+
+      <ion-item-options *ngIf="!cat.isDefault" side="end">
+        <ion-item-option color="primary" (click)="openForm(cat)">
+          <ion-icon slot="icon-only" name="pencil-outline"></ion-icon>
+        </ion-item-option>
+        <ion-item-option color="danger" (click)="confirmDelete(cat)">
+          <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+        </ion-item-option>
+      </ion-item-options>
+    </ion-item-sliding>
+  </ion-list>
+
+  <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+    <ion-fab-button color="primary" (click)="openForm()">
+      <ion-icon name="add"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
+</ion-content>

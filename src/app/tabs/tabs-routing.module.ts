@@ -27,6 +27,10 @@ const routes: Routes = [
         path: 'reportes',
         loadChildren: () => import('../pages/reportes/reportes.module').then(m => m.ReportesPageModule),
       },
+      {
+        path: 'categorias',
+        loadChildren: () => import('../pages/categorias/categorias.module').then(m => m.CategoriasPageModule),
+      },
       { path: '', redirectTo: '/tabs/dashboard', pathMatch: 'full' },
     ],
   },
