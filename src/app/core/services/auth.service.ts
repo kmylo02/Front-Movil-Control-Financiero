@@ -4,6 +4,7 @@ import { BehaviorSubject, Observable, tap } from 'rxjs';
 import { Router } from '@angular/router';
 import { environment } from '../../../environments/environment';
 import { AuthResponse, User } from '../models';
+import { BiometricService } from './biometric.service';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -11,7 +12,11 @@ export class AuthService {
   private userSubject = new BehaviorSubject<User | null>(this.loadUser());
   currentUser$ = this.userSubject.asObservable();
 
-  constructor(private http: HttpClient, private router: Router) {}
+  constructor(
+    private http: HttpClient,
+    private router: Router,
+    private biometric: BiometricService,
+  ) {}
 
   get currentUser(): User | null { return this.userSubject.value; }
   get isLoggedIn(): boolean { return !!localStorage.getItem('access_token'); }
@@ -31,8 +36,15 @@ export class AuthService {
   logout(): void {
     localStorage.removeItem('access_token');
     localStorage.removeItem('user');
+    this.biometric.deleteCredentials();
     this.userSubject.next(null);
     this.router.navigate(['/auth/login']);
+  }
+
+  restoreSession(token: string, user: User): void {
+    localStorage.setItem('access_token', token);
+    localStorage.setItem('user', JSON.stringify(user));
+    this.userSubject.next(user);
   }
 
   private storeSession(res: AuthResponse): void {

@@ -46,5 +46,17 @@
         ¿No tienes cuenta? <strong>&nbsp;Regístrate</strong>
       </ion-button>
     </form>
+
+    <!-- Botón huella -->
+    <div *ngIf="showBiometric" class="biometric-section">
+      <div class="biometric-divider">
+        <span>o</span>
+      </div>
+      <ion-button expand="block" fill="outline" color="medium" (click)="loginWithBiometric()">
+        <ion-icon name="finger-print-outline" slot="start" color="primary"></ion-icon>
+        Ingresar con huella dactilar
+      </ion-button>
+    </div>
+
   </div>
 </ion-content>
