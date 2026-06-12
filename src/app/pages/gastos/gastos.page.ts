@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { AlertController, LoadingController, ToastController } from '@ionic/angular';
+import { Router } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { ExpensesService } from '../../core/services/expenses.service';
 import { CategoriesService } from '../../core/services/categories.service';
@@ -31,6 +32,7 @@ export class GastosPage implements OnInit {
     private alertCtrl: AlertController,
     private loadingCtrl: LoadingController,
     private toastCtrl: ToastController,
+    private router: Router,
   ) {}
 
   ngOnInit() { this.buildForm(); this.loadData(); }
@@ -59,6 +61,28 @@ export class GastosPage implements OnInit {
       },
       error: () => { this.isLoading = false; },
     });
+  }
+
+  goToCategories(): void { this.router.navigate(['/tabs/categorias']); }
+
+  async quickNewCategory(): Promise<void> {
+    const alert = await this.alertCtrl.create({
+      header: 'Nueva categoría de gasto',
+      inputs: [{ name: 'name', type: 'text', placeholder: 'Nombre (ej: Alimentación)' }],
+      buttons: [
+        { text: 'Cancelar', role: 'cancel' },
+        {
+          text: 'Crear',
+          handler: (data) => {
+            if (!data.name?.trim()) return false;
+            this.categoriesService.create({ name: data.name.trim(), type: 'expense', color: '#6366f1', icon: 'receipt' })
+              .subscribe({ next: (cat) => { this.categories = [...this.categories, cat]; this.form.patchValue({ categoryId: cat._id }); this.showToast('Categoría creada'); } });
+            return true;
+          },
+        },
+      ],
+    });
+    await alert.present();
   }
 
   openAdd() { this.editingId = null; this.buildForm(); this.showModal = true; }

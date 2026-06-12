@@ -10,6 +10,7 @@ const COLORS = ['#6366f1','#ef4444','#f97316','#eab308','#22c55e','#14b8a6',
   selector: 'app-categorias',
   templateUrl: './categorias.page.html',
   styleUrls: ['./categorias.page.scss'],
+  standalone: false,
 })
 export class CategoriasPage implements OnInit {
   categories: Category[] = [];

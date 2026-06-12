@@ -15,5 +15,6 @@ export class CategoriesService {
     return this.http.get<Category[]>(this.base, { params });
   }
   create(data: Partial<Category>): Observable<Category> { return this.http.post<Category>(this.base, data); }
+  update(id: string, data: Partial<Category>): Observable<Category> { return this.http.put<Category>(`${this.base}/${id}`, data); }
   delete(id: string): Observable<void> { return this.http.delete<void>(`${this.base}/${id}`); }
 }

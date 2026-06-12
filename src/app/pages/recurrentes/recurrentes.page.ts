@@ -6,6 +6,7 @@ import { RecurringService } from '../../core/services/recurring.service';
 import { CategoriesService } from '../../core/services/categories.service';
 import { Recurring, Category } from '../../core/models';
 
+
 @Component({
   selector: 'app-recurrentes',
   templateUrl: './recurrentes.page.html',
@@ -64,6 +65,26 @@ export class RecurrentesPage implements OnInit {
       },
       error: () => { this.isLoading = false; },
     });
+  }
+
+  async quickNewCategory(): Promise<void> {
+    const alert = await this.alertCtrl.create({
+      header: 'Nueva categoría',
+      inputs: [{ name: 'name', type: 'text', placeholder: 'Nombre (ej: Suscripciones)' }],
+      buttons: [
+        { text: 'Cancelar', role: 'cancel' },
+        {
+          text: 'Crear',
+          handler: (data) => {
+            if (!data.name?.trim()) return false;
+            this.categoriesService.create({ name: data.name.trim(), type: 'expense', color: '#6366f1', icon: 'receipt' })
+              .subscribe({ next: (cat) => { this.categories = [...this.categories, cat]; this.form.patchValue({ categoryId: cat._id }); this.showToast('Categoría creada'); } });
+            return true;
+          },
+        },
+      ],
+    });
+    await alert.present();
   }
 
   openAdd() { this.editingId = null; this.buildForm(); this.showModal = true; }
