@@ -31,6 +31,10 @@ const routes: Routes = [
         path: 'categorias',
         loadChildren: () => import('../pages/categorias/categorias.module').then(m => m.CategoriasPageModule),
       },
+      {
+        path: 'agenda',
+        loadChildren: () => import('../pages/agenda/agenda.module').then(m => m.AgendaPageModule),
+      },
       { path: '', redirectTo: '/tabs/dashboard', pathMatch: 'full' },
     ],
   },

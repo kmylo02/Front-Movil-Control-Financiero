@@ -1,0 +1,26 @@
+.summary-grid {
+  padding: 8px;
+  .summary-card {
+    border-radius: 12px;
+    padding: 12px;
+    .sc-label  { font-size: 12px; opacity: .7; }
+    .sc-amount { font-size: 18px; font-weight: 700; margin: 2px 0; }
+    .sc-count  { font-size: 11px; opacity: .7; }
+  }
+  .pending-card { background: #fef2f2; color: #dc2626; }
+  .paid-card    { background: #f0fdf4; color: #16a34a; }
+}
+
+.due-day {
+  display: flex; flex-direction: column; align-items: center;
+  min-width: 36px; margin-right: 8px;
+  .day-num { font-size: 20px; font-weight: 700; line-height: 1; }
+  .day-lbl { font-size: 9px; text-transform: uppercase; opacity: .6; }
+}
+
+.color-ball { width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
+
+.paid-item { opacity: 0.55; }
+
+.text-danger  { color: var(--ion-color-danger)  !important; }
+.text-warning { color: var(--ion-color-warning) !important; }

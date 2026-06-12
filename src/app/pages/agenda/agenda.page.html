@@ -1,0 +1,194 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>Agenda de Pagos</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="copyToNextMonth()" title="Copiar recurrentes">
+        <ion-icon slot="icon-only" name="copy-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+  <!-- Navegación mes -->
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-button (click)="changeMonth(-1)">
+        <ion-icon slot="icon-only" name="chevron-back-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title size="small" class="ion-text-center">{{ monthName }} {{ year }}</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="changeMonth(1)">
+        <ion-icon slot="icon-only" name="chevron-forward-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <ion-refresher slot="fixed" (ionRefresh)="loadData(); $event.target.complete()">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  <div *ngIf="isLoading" class="ion-text-center ion-padding">
+    <ion-spinner name="crescent" color="primary"></ion-spinner>
+  </div>
+
+  <ng-container *ngIf="!isLoading">
+    <!-- Resumen -->
+    <ion-grid class="summary-grid">
+      <ion-row>
+        <ion-col>
+          <div class="summary-card pending-card">
+            <div class="sc-label">Pendiente</div>
+            <div class="sc-amount">{{ formatCurrency(totalPending) }}</div>
+            <div class="sc-count">{{ pending.length }} pagos</div>
+          </div>
+        </ion-col>
+        <ion-col>
+          <div class="summary-card paid-card">
+            <div class="sc-label">Pagado</div>
+            <div class="sc-amount">{{ formatCurrency(totalPaid) }}</div>
+            <div class="sc-count">{{ paidPercent }}% completado</div>
+          </div>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+
+    <!-- Sin pagos -->
+    <div *ngIf="bills.length === 0" class="ion-text-center ion-padding">
+      <ion-icon name="calendar-outline" style="font-size: 48px; color: #94a3b8"></ion-icon>
+      <p color="medium">Sin pagos este mes. Agrega uno con el botón +</p>
+    </div>
+
+    <!-- Pendientes -->
+    <div *ngIf="pending.length > 0">
+      <ion-list-header>
+        <ion-label>Pendientes</ion-label>
+        <ion-badge color="danger">{{ pending.length }}</ion-badge>
+      </ion-list-header>
+      <ion-item-sliding *ngFor="let bill of pending">
+        <ion-item [class.overdue]="isOverdue(bill)" [class.due-today]="isDueToday(bill)">
+          <div class="due-day" slot="start">
+            <span class="day-num">{{ bill.dueDay }}</span>
+            <span class="day-lbl" [class.text-danger]="isOverdue(bill)" [class.text-warning]="isDueToday(bill)">
+              {{ isOverdue(bill) ? 'Venc.' : isDueToday(bill) ? 'Hoy' : 'día' }}
+            </span>
+          </div>
+          <div class="color-ball" *ngIf="bill.categoryId" [style.background]="catColor(bill)" slot="start"></div>
+          <ion-label>
+            <h3>
+              {{ bill.name }}
+              <ion-badge *ngIf="bill.isRecurring" color="medium" style="font-size:10px">🔄</ion-badge>
+            </h3>
+            <p *ngIf="bill.categoryId">{{ catName(bill) }}</p>
+            <p *ngIf="bill.notes">{{ bill.notes }}</p>
+          </ion-label>
+          <ion-note slot="end">{{ formatCurrency(bill.amount) }}</ion-note>
+          <ion-button slot="end" fill="outline" color="success" size="small" (click)="toggle(bill)">
+            <ion-icon slot="icon-only" name="checkmark-outline"></ion-icon>
+          </ion-button>
+        </ion-item>
+        <ion-item-options side="end">
+          <ion-item-option color="primary" (click)="openEdit(bill)">
+            <ion-icon slot="icon-only" name="pencil-outline"></ion-icon>
+          </ion-item-option>
+          <ion-item-option color="danger" (click)="confirmDelete(bill)">
+            <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+          </ion-item-option>
+        </ion-item-options>
+      </ion-item-sliding>
+    </div>
+
+    <!-- Pagados -->
+    <div *ngIf="paid.length > 0">
+      <ion-list-header>
+        <ion-label color="medium">Pagados</ion-label>
+        <ion-badge color="success">{{ paid.length }}</ion-badge>
+      </ion-list-header>
+      <ion-item-sliding *ngFor="let bill of paid">
+        <ion-item class="paid-item">
+          <div class="due-day" slot="start">
+            <span class="day-num">{{ bill.dueDay }}</span>
+            <span class="day-lbl">día</span>
+          </div>
+          <div class="color-ball" *ngIf="bill.categoryId" [style.background]="catColor(bill)" slot="start"></div>
+          <ion-label>
+            <h3>{{ bill.name }}</h3>
+            <p *ngIf="bill.categoryId">{{ catName(bill) }}</p>
+          </ion-label>
+          <ion-note slot="end">{{ formatCurrency(bill.amount) }}</ion-note>
+          <ion-button slot="end" fill="clear" color="medium" size="small" (click)="toggle(bill)">
+            <ion-icon slot="icon-only" name="arrow-undo-outline"></ion-icon>
+          </ion-button>
+        </ion-item>
+        <ion-item-options side="end">
+          <ion-item-option color="primary" (click)="openEdit(bill)">
+            <ion-icon slot="icon-only" name="pencil-outline"></ion-icon>
+          </ion-item-option>
+          <ion-item-option color="danger" (click)="confirmDelete(bill)">
+            <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+          </ion-item-option>
+        </ion-item-options>
+      </ion-item-sliding>
+    </div>
+  </ng-container>
+
+  <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+    <ion-fab-button color="primary" (click)="openAdd()">
+      <ion-icon name="add"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
+</ion-content>
+
+<!-- Modal nuevo/editar -->
+<ion-modal [isOpen]="showModal" (didDismiss)="closeModal()">
+  <ng-template>
+    <ion-header>
+      <ion-toolbar color="primary">
+        <ion-title>{{ editingId ? 'Editar pago' : 'Nuevo pago' }}</ion-title>
+        <ion-buttons slot="end">
+          <ion-button (click)="closeModal()">
+            <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+          </ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
+    <ion-content class="ion-padding">
+      <form [formGroup]="form" (ngSubmit)="onSave()">
+        <ion-list lines="none">
+          <ion-item>
+            <ion-label position="stacked">Nombre *</ion-label>
+            <ion-input formControlName="name" placeholder="Ej: Arriendo, Netflix…"></ion-input>
+          </ion-item>
+          <ion-item>
+            <ion-label position="stacked">Monto *</ion-label>
+            <ion-input type="number" formControlName="amount" placeholder="0"></ion-input>
+          </ion-item>
+          <ion-item>
+            <ion-label position="stacked">Día de pago *</ion-label>
+            <ion-input type="number" formControlName="dueDay" placeholder="1 - 31"></ion-input>
+          </ion-item>
+          <ion-item>
+            <ion-label position="stacked">Categoría</ion-label>
+            <ion-select formControlName="categoryId" placeholder="Sin categoría (opcional)">
+              <ion-select-option value="">Sin categoría</ion-select-option>
+              <ion-select-option *ngFor="let cat of categories" [value]="cat._id">{{ cat.name }}</ion-select-option>
+            </ion-select>
+          </ion-item>
+          <ion-item>
+            <ion-label position="stacked">Notas</ion-label>
+            <ion-input formControlName="notes" placeholder="Opcional"></ion-input>
+          </ion-item>
+          <ion-item>
+            <ion-label>🔄 Pago recurrente</ion-label>
+            <ion-checkbox slot="end" formControlName="isRecurring"></ion-checkbox>
+          </ion-item>
+        </ion-list>
+
+        <ion-button expand="block" type="submit" color="primary" class="ion-margin-top" [disabled]="form.invalid">
+          <ion-icon name="save-outline" slot="start"></ion-icon>
+          Guardar
+        </ion-button>
+      </form>
+    </ion-content>
+  </ng-template>
+</ion-modal>
