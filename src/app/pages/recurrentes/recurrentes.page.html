@@ -74,6 +74,30 @@
     </ion-item>
   </ion-list>
 
+  <!-- Recurrentes de la Agenda -->
+  <div *ngIf="!isLoading && recurringBills.length > 0">
+    <ion-list-header>
+      <ion-label>📅 Pagos recurrentes de la Agenda</ion-label>
+    </ion-list-header>
+    <ion-item-sliding *ngFor="let bill of recurringBills">
+      <ion-item>
+        <div class="color-ball" [style.background]="billCatColor(bill)" slot="start"></div>
+        <ion-label>
+          <h3>{{ bill.name }}</h3>
+          <p>{{ billCatName(bill) || 'Sin categoría' }} · Día {{ bill.dueDay }}</p>
+        </ion-label>
+        <ion-badge slot="end" [color]="bill.status === 'paid' ? 'success' : 'warning'">
+          {{ bill.status === 'paid' ? 'Pagado' : 'Pendiente' }}
+        </ion-badge>
+        <ion-note slot="end" style="margin-left:8px">{{ bill.amount | currency:'COP':'symbol':'1.0-0' }}</ion-note>
+        <ion-button slot="end" fill="clear" size="small" (click)="toggleBill(bill)">
+          <ion-icon slot="icon-only" [name]="bill.status === 'paid' ? 'arrow-undo-outline' : 'checkmark-outline'"
+                    [color]="bill.status === 'paid' ? 'medium' : 'success'"></ion-icon>
+        </ion-button>
+      </ion-item>
+    </ion-item-sliding>
+  </div>
+
   <ion-fab vertical="bottom" horizontal="end" slot="fixed">
     <ion-fab-button color="tertiary" (click)="openAdd()">
       <ion-icon name="add"></ion-icon>

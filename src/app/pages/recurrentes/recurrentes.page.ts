@@ -4,19 +4,26 @@ import { AlertController, LoadingController, ToastController } from '@ionic/angu
 import { forkJoin } from 'rxjs';
 import { RecurringService } from '../../core/services/recurring.service';
 import { CategoriesService } from '../../core/services/categories.service';
-import { Recurring, Category } from '../../core/models';
+import { BillItemsService } from '../../core/services/bill-items.service';
+import { Recurring, Category, BillItem } from '../../core/models';
 
 
 @Component({
   selector: 'app-recurrentes',
   templateUrl: './recurrentes.page.html',
+  styleUrls: ['./recurrentes.page.scss'],
   standalone: false,
 })
 export class RecurrentesPage implements OnInit {
   recurrentes: Recurring[] = [];
   pending: Recurring[] = [];
   categories: Category[] = [];
+  recurringBills: BillItem[] = [];
   isLoading = true;
+
+  today        = new Date();
+  currentYear  = this.today.getFullYear();
+  currentMonth = this.today.getMonth() + 1;
   showModal = false;
   editingId: string | null = null;
   form!: FormGroup;
@@ -31,6 +38,7 @@ export class RecurrentesPage implements OnInit {
   constructor(
     private recurringService: RecurringService,
     private categoriesService: CategoriesService,
+    private billItemsService: BillItemsService,
     private fb: FormBuilder,
     private alertCtrl: AlertController,
     private loadingCtrl: LoadingController,
@@ -53,15 +61,17 @@ export class RecurrentesPage implements OnInit {
   loadData() {
     this.isLoading = true;
     forkJoin({
-      all: this.recurringService.getAll(),
-      pending: this.recurringService.getPending(),
+      all:        this.recurringService.getAll(),
+      pending:    this.recurringService.getPending(),
       categories: this.categoriesService.getAll('expense'),
+      bills:      this.billItemsService.getByMonth(this.currentYear, this.currentMonth),
     }).subscribe({
-      next: ({ all, pending, categories }) => {
-        this.recurrentes = all;
-        this.pending = pending;
-        this.categories = categories;
-        this.isLoading = false;
+      next: ({ all, pending, categories, bills }) => {
+        this.recurrentes    = all;
+        this.pending        = pending;
+        this.categories     = categories;
+        this.recurringBills = bills.filter(b => b.isRecurring);
+        this.isLoading      = false;
       },
       error: () => { this.isLoading = false; },
     });
@@ -180,6 +190,16 @@ export class RecurrentesPage implements OnInit {
   getCategoryName(categoryId: any): string {
     if (typeof categoryId === 'object') return categoryId?.name || '';
     return this.categories.find(c => c._id === categoryId)?.name || '';
+  }
+
+  billCatName(b: BillItem): string  { return typeof b.categoryId === 'object' ? (b.categoryId as any).name : ''; }
+  billCatColor(b: BillItem): string { return typeof b.categoryId === 'object' ? (b.categoryId as any).color : '#6366f1'; }
+
+  toggleBill(bill: BillItem): void {
+    this.billItemsService.toggle(bill._id).subscribe(() => {
+      this.billItemsService.getByMonth(this.currentYear, this.currentMonth)
+        .subscribe(bills => { this.recurringBills = bills.filter(b => b.isRecurring); });
+    });
   }
 
   private async showToast(message: string, color = 'success') {
