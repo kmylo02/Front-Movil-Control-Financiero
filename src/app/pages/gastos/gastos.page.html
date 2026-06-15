@@ -14,6 +14,7 @@
     <ion-refresher-content></ion-refresher-content>
   </ion-refresher>
 
+  <!-- Mes navegador -->
   <div class="month-nav ion-padding-horizontal">
     <ion-button fill="clear" size="small" (click)="prevMonth()">
       <ion-icon slot="icon-only" name="chevron-back-outline"></ion-icon>
@@ -24,6 +25,7 @@
     </ion-button>
   </div>
 
+  <!-- Resumen total -->
   <div class="ion-padding-horizontal ion-padding-bottom">
     <ion-chip color="danger" outline>
       <ion-icon name="trending-down-outline"></ion-icon>
@@ -31,12 +33,31 @@
     </ion-chip>
   </div>
 
+  <!-- Barra búsqueda y orden -->
+  <div class="filter-bar ion-padding-horizontal ion-padding-bottom">
+    <div class="search-wrap">
+      <ion-icon name="search-outline" class="search-icon"></ion-icon>
+      <input
+        class="search-input"
+        placeholder="Buscar descripción…"
+        [(ngModel)]="searchText"
+      />
+      <ion-icon *ngIf="searchText" name="close-circle-outline" class="clear-icon" (click)="searchText=''"></ion-icon>
+    </div>
+    <select class="sort-select" [(ngModel)]="sortBy">
+      <option value="date-desc">Fecha ↓ (reciente)</option>
+      <option value="date-asc">Fecha ↑ (antiguo)</option>
+      <option value="amount-desc">Monto ↓ (mayor)</option>
+      <option value="amount-asc">Monto ↑ (menor)</option>
+    </select>
+  </div>
+
   <div *ngIf="isLoading" class="ion-text-center ion-padding">
     <ion-spinner name="crescent" color="primary"></ion-spinner>
   </div>
 
   <ion-list *ngIf="!isLoading">
-    <ion-item-sliding *ngFor="let expense of expenses">
+    <ion-item-sliding *ngFor="let expense of filtered">
       <ion-item>
         <ion-icon
           slot="start"
@@ -45,7 +66,7 @@
         </ion-icon>
         <ion-label>
           <h3>{{ expense.description }}</h3>
-          <p>{{ getCategoryName(expense.categoryId) }} · {{ expense.date | date:'dd/MM/yyyy' }}</p>
+          <p>{{ getCategoryName(expense.categoryId) }} · {{ expense.date | date:'dd/MM/yyyy':'UTC' }}</p>
         </ion-label>
         <ion-note slot="end" color="danger">
           {{ expense.amount | currency:'COP':'symbol':'1.0-0' }}
@@ -60,8 +81,10 @@
         </ion-item-option>
       </ion-item-options>
     </ion-item-sliding>
-    <ion-item *ngIf="expenses.length === 0">
-      <ion-label class="ion-text-center" color="medium">Sin gastos este mes</ion-label>
+    <ion-item *ngIf="filtered.length === 0">
+      <ion-label class="ion-text-center" color="medium">
+        {{ searchText ? 'Sin resultados para "' + searchText + '"' : 'Sin gastos este mes' }}
+      </ion-label>
     </ion-item>
   </ion-list>
 

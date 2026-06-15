@@ -10,6 +10,7 @@ import { Expense, Category, MONTH_NAMES } from '../../core/models';
 @Component({
   selector: 'app-gastos',
   templateUrl: './gastos.page.html',
+  styleUrls: ['./gastos.page.scss'],
   standalone: false,
 })
 export class GastosPage implements OnInit {
@@ -20,10 +21,26 @@ export class GastosPage implements OnInit {
   editingId: string | null = null;
   form!: FormGroup;
 
+  searchText = '';
+  sortBy: 'date-desc' | 'date-asc' | 'amount-desc' | 'amount-asc' = 'date-desc';
+
   today = new Date();
   year = this.today.getFullYear();
   month = this.today.getMonth() + 1;
   monthName = MONTH_NAMES[this.month - 1];
+
+  get filtered(): Expense[] {
+    let list = this.searchText.trim()
+      ? this.expenses.filter(e => e.description.toLowerCase().includes(this.searchText.toLowerCase()))
+      : [...this.expenses];
+    switch (this.sortBy) {
+      case 'date-desc':   list.sort((a, b) => b.date.localeCompare(a.date)); break;
+      case 'date-asc':    list.sort((a, b) => a.date.localeCompare(b.date)); break;
+      case 'amount-desc': list.sort((a, b) => b.amount - a.amount); break;
+      case 'amount-asc':  list.sort((a, b) => a.amount - b.amount); break;
+    }
+    return list;
+  }
 
   constructor(
     private expensesService: ExpensesService,
@@ -43,9 +60,14 @@ export class GastosPage implements OnInit {
       description: ['', Validators.required],
       amount: [null, [Validators.required, Validators.min(0.01)]],
       categoryId: ['', Validators.required],
-      date: [new Date().toISOString().split('T')[0], Validators.required],
+      date: [this.todayLocal(), Validators.required],
       notes: [''],
     });
+  }
+
+  private todayLocal(): string {
+    const t = new Date();
+    return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`;
   }
 
   loadData() {
@@ -93,7 +115,7 @@ export class GastosPage implements OnInit {
       description: expense.description,
       amount: expense.amount,
       categoryId: (expense.categoryId as any)?._id || expense.categoryId,
-      date: expense.date?.toString().split('T')[0],
+      date: (expense.date as string)?.substring(0, 10),
       notes: expense.notes || '',
     });
     this.showModal = true;
