@@ -5,8 +5,7 @@ import { forkJoin } from 'rxjs';
 import { RecurringService } from '../../core/services/recurring.service';
 import { CategoriesService } from '../../core/services/categories.service';
 import { BillItemsService } from '../../core/services/bill-items.service';
-import { Recurring, Category, BillItem } from '../../core/models';
-
+import { Recurring, Category, BillItem, MONTH_NAMES } from '../../core/models';
 
 @Component({
   selector: 'app-recurrentes',
@@ -15,45 +14,94 @@ import { Recurring, Category, BillItem } from '../../core/models';
   standalone: false,
 })
 export class RecurrentesPage implements OnInit {
-  recurrentes: Recurring[] = [];
-  pending: Recurring[] = [];
-  categories: Category[] = [];
-  recurringBills: BillItem[] = [];
+  recurrentes:    Recurring[] = [];
+  pending:        Recurring[] = [];
+  categories:     Category[]  = [];
+  recurringBills: BillItem[]  = [];
   isLoading = true;
 
   today        = new Date();
   currentYear  = this.today.getFullYear();
   currentMonth = this.today.getMonth() + 1;
-  showModal = false;
+  todayDay     = this.today.getDate();
+
+  dayFilter: number | null = null;
+  showModal  = false;
   editingId: string | null = null;
   form!: FormGroup;
   selectedSegment = 'lista';
 
   modes = [
-    { value: 'auto', label: 'Automático', icon: 'flash-outline', desc: 'Se genera el día 1 del mes' },
-    { value: 'manual', label: 'Manual', icon: 'hand-left-outline', desc: 'Confirmas cada mes' },
-    { value: 'template', label: 'Plantilla', icon: 'copy-outline', desc: 'Copias y ajustas el monto' },
+    { value: 'auto',     label: 'Automático', icon: 'flash-outline',     desc: 'Se genera el día 1 del mes' },
+    { value: 'manual',   label: 'Manual',     icon: 'hand-left-outline', desc: 'Confirmas cada mes' },
+    { value: 'template', label: 'Plantilla',  icon: 'copy-outline',      desc: 'Copias y ajustas el monto' },
   ];
 
+  // ── Month navigation ───────────────────────────
+  get monthName() { return MONTH_NAMES[this.currentMonth - 1]; }
+
+  changeMonth(dir: number) {
+    this.currentMonth += dir;
+    if (this.currentMonth > 12) { this.currentMonth = 1;  this.currentYear++; }
+    if (this.currentMonth < 1)  { this.currentMonth = 12; this.currentYear--; }
+    this.dayFilter = null;
+    this.loadData();
+  }
+
+  // ── Day filter + sorted bills ──────────────────
+  get activeDays(): number[] {
+    return [...new Set(this.recurringBills.map(b => b.dueDay))].sort((a, b) => a - b);
+  }
+
+  get filteredBills(): BillItem[] {
+    const base = this.dayFilter
+      ? this.recurringBills.filter(b => b.dueDay === this.dayFilter)
+      : this.recurringBills;
+    const pending = base.filter(b => b.status === 'pending').sort((a, b) => a.dueDay - b.dueDay);
+    const paid    = base.filter(b => b.status === 'paid').sort((a, b) => a.dueDay - b.dueDay);
+    return [...pending, ...paid];
+  }
+
+  // ── KPI getters (driven by filteredBills) ──────
+  get billsPendingList()  { return this.filteredBills.filter(b => b.status === 'pending'); }
+  get billsPaidList()     { return this.filteredBills.filter(b => b.status === 'paid'); }
+  get billsTotal()        { return this.filteredBills.reduce((s, b) => s + b.amount, 0); }
+  get billsTotalPending() { return this.billsPendingList.reduce((s, b) => s + b.amount, 0); }
+  get billsTotalPaid()    { return this.billsPaidList.reduce((s, b) => s + b.amount, 0); }
+  get billsPercent()      { return this.billsTotal > 0 ? Math.round((this.billsTotalPaid / this.billsTotal) * 100) : 0; }
+
+  isOverdue(b: BillItem)  {
+    return b.status === 'pending'
+      && this.currentYear === this.today.getFullYear()
+      && this.currentMonth === this.today.getMonth() + 1
+      && b.dueDay < this.todayDay;
+  }
+  isDueToday(b: BillItem) {
+    return b.status === 'pending'
+      && this.currentYear === this.today.getFullYear()
+      && this.currentMonth === this.today.getMonth() + 1
+      && b.dueDay === this.todayDay;
+  }
+
   constructor(
-    private recurringService: RecurringService,
+    private recurringService:  RecurringService,
     private categoriesService: CategoriesService,
-    private billItemsService: BillItemsService,
-    private fb: FormBuilder,
-    private alertCtrl: AlertController,
+    private billItemsService:  BillItemsService,
+    private fb:         FormBuilder,
+    private alertCtrl:  AlertController,
     private loadingCtrl: LoadingController,
-    private toastCtrl: ToastController,
+    private toastCtrl:  ToastController,
   ) {}
 
-  ngOnInit() { this.buildForm(); this.loadData(); }
-  ionViewWillEnter() { this.loadData(); }
+  ngOnInit()        { this.buildForm(); this.loadData(); }
+  ionViewWillEnter(){ this.loadData(); }
 
   buildForm() {
     this.form = this.fb.group({
-      name: ['', Validators.required],
-      amount: [null, [Validators.required, Validators.min(0.01)]],
+      name:       ['', Validators.required],
+      amount:     [null, [Validators.required, Validators.min(0.01)]],
       categoryId: ['', Validators.required],
-      mode: ['manual', Validators.required],
+      mode:       ['manual', Validators.required],
       dayOfMonth: [1, [Validators.required, Validators.min(1), Validators.max(31)]],
     });
   }
@@ -97,15 +145,15 @@ export class RecurrentesPage implements OnInit {
     await alert.present();
   }
 
-  openAdd() { this.editingId = null; this.buildForm(); this.showModal = true; }
+  openAdd()  { this.editingId = null; this.buildForm(); this.showModal = true; }
 
   openEdit(r: Recurring) {
     this.editingId = r._id;
     this.form.patchValue({
-      name: r.name,
-      amount: r.amount,
+      name:       r.name,
+      amount:     r.amount,
       categoryId: (r.categoryId as any)?._id || r.categoryId,
-      mode: r.mode,
+      mode:       r.mode,
       dayOfMonth: r.dayOfMonth,
     });
     this.showModal = true;
@@ -121,12 +169,7 @@ export class RecurrentesPage implements OnInit {
       ? this.recurringService.update(this.editingId, this.form.value)
       : this.recurringService.create(this.form.value);
     req.subscribe({
-      next: async () => {
-        await loading.dismiss();
-        this.showModal = false;
-        this.loadData();
-        this.showToast('Recurrente guardado');
-      },
+      next: async () => { await loading.dismiss(); this.showModal = false; this.loadData(); this.showToast('Recurrente guardado'); },
       error: async () => { await loading.dismiss(); this.showToast('Error al guardar', 'danger'); },
     });
   }
@@ -179,20 +222,15 @@ export class RecurrentesPage implements OnInit {
     }
   }
 
-  getModeIcon(mode: string): string {
-    return this.modes.find(m => m.value === mode)?.icon || 'repeat-outline';
-  }
-
-  getModeLabel(mode: string): string {
-    return this.modes.find(m => m.value === mode)?.label || mode;
-  }
+  getModeIcon(mode: string)  { return this.modes.find(m => m.value === mode)?.icon  || 'repeat-outline'; }
+  getModeLabel(mode: string) { return this.modes.find(m => m.value === mode)?.label || mode; }
 
   getCategoryName(categoryId: any): string {
     if (typeof categoryId === 'object') return categoryId?.name || '';
     return this.categories.find(c => c._id === categoryId)?.name || '';
   }
 
-  billCatName(b: BillItem): string  { return typeof b.categoryId === 'object' ? (b.categoryId as any).name : ''; }
+  billCatName(b: BillItem):  string { return typeof b.categoryId === 'object' ? (b.categoryId as any).name  : ''; }
   billCatColor(b: BillItem): string { return typeof b.categoryId === 'object' ? (b.categoryId as any).color : '#6366f1'; }
 
   toggleBill(bill: BillItem): void {

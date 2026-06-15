@@ -13,6 +13,12 @@
           <ion-badge *ngIf="pending.length > 0" color="danger">{{ pending.length }}</ion-badge>
         </ion-label>
       </ion-segment-button>
+      <ion-segment-button value="agenda">
+        <ion-label>
+          Agenda
+          <ion-badge *ngIf="recurringBills.length > 0" color="tertiary">{{ recurringBills.length }}</ion-badge>
+        </ion-label>
+      </ion-segment-button>
     </ion-segment>
   </ion-toolbar>
 </ion-header>
@@ -22,25 +28,26 @@
     <ion-refresher-content></ion-refresher-content>
   </ion-refresher>
 
-  <div *ngIf="isLoading" class="ion-text-center ion-padding">
+  <div *ngIf="isLoading" class="loading-box">
     <ion-spinner name="crescent" color="tertiary"></ion-spinner>
   </div>
 
-  <!-- Lista todos -->
-  <ion-list *ngIf="!isLoading && selectedSegment === 'lista'">
-    <ion-item-sliding *ngFor="let r of recurrentes">
-      <ion-item>
-        <ion-icon slot="start" [name]="getModeIcon(r.mode)" color="tertiary"></ion-icon>
+  <!-- ─── TODOS ─── -->
+  <ion-list *ngIf="!isLoading && selectedSegment === 'lista'" lines="none" class="rec-list">
+    <ion-item-sliding *ngFor="let r of recurrentes" class="rec-item-wrap">
+      <ion-item class="rec-item">
+        <div class="rec-icon-wrap" slot="start">
+          <ion-icon [name]="getModeIcon(r.mode)" color="tertiary"></ion-icon>
+        </div>
         <ion-label>
-          <h3>{{ r.name }}</h3>
-          <p>{{ getCategoryName(r.categoryId) }} · Día {{ r.dayOfMonth }}</p>
-          <p>
-            <ion-badge [color]="r.mode === 'auto' ? 'primary' : r.mode === 'manual' ? 'warning' : 'medium'">
-              {{ getModeLabel(r.mode) }}
-            </ion-badge>
-          </p>
+          <h3 class="rec-name">{{ r.name }}</h3>
+          <p class="rec-meta">{{ getCategoryName(r.categoryId) }} · Día {{ r.dayOfMonth }}</p>
+          <ion-badge class="rec-mode-badge"
+                     [color]="r.mode === 'auto' ? 'primary' : r.mode === 'manual' ? 'warning' : 'medium'">
+            {{ getModeLabel(r.mode) }}
+          </ion-badge>
         </ion-label>
-        <ion-note slot="end">{{ r.amount | currency:'COP':'symbol':'1.0-0' }}</ion-note>
+        <div class="rec-amount" slot="end">{{ r.amount | currency:'COP':'symbol':'1.0-0' }}</div>
       </ion-item>
       <ion-item-options side="end">
         <ion-item-option color="primary" (click)="openEdit(r)">
@@ -51,51 +58,132 @@
         </ion-item-option>
       </ion-item-options>
     </ion-item-sliding>
-    <ion-item *ngIf="recurrentes.length === 0">
-      <ion-label class="ion-text-center" color="medium">No hay recurrentes configurados</ion-label>
-    </ion-item>
+    <div *ngIf="recurrentes.length === 0" class="empty-msg">
+      <ion-icon name="repeat-outline"></ion-icon>
+      <p>No hay recurrentes configurados</p>
+    </div>
   </ion-list>
 
-  <!-- Pendientes -->
-  <ion-list *ngIf="!isLoading && selectedSegment === 'pendientes'">
-    <ion-item *ngFor="let r of pending">
-      <ion-icon slot="start" name="alert-circle-outline" color="warning"></ion-icon>
-      <ion-label>
-        <h3>{{ r.name }}</h3>
-        <p>{{ r.amount | currency:'COP':'symbol':'1.0-0' }} · {{ getModeLabel(r.mode) }}</p>
-      </ion-label>
-      <ion-button slot="end" fill="outline" color="success" size="small" (click)="activatePending(r)">
+  <!-- ─── PENDIENTES ─── -->
+  <div *ngIf="!isLoading && selectedSegment === 'pendientes'" class="pending-section">
+    <div class="pending-card" *ngFor="let r of pending">
+      <div class="pending-left">
+        <div class="pending-icon-wrap">
+          <ion-icon name="alert-circle-outline" color="warning"></ion-icon>
+        </div>
+        <div>
+          <div class="pending-name">{{ r.name }}</div>
+          <div class="pending-meta">{{ r.amount | currency:'COP':'symbol':'1.0-0' }} · {{ getModeLabel(r.mode) }}</div>
+        </div>
+      </div>
+      <ion-button fill="solid" color="success" size="small" class="confirm-btn" (click)="activatePending(r)">
         <ion-icon slot="start" name="checkmark-outline"></ion-icon>
         Confirmar
       </ion-button>
-    </ion-item>
-    <ion-item *ngIf="pending.length === 0">
-      <ion-label class="ion-text-center" color="medium">Sin pendientes este mes</ion-label>
-    </ion-item>
-  </ion-list>
+    </div>
+    <div *ngIf="pending.length === 0" class="empty-msg">
+      <ion-icon name="checkmark-done-outline" color="success"></ion-icon>
+      <p>Sin pendientes este mes</p>
+    </div>
+  </div>
 
-  <!-- Recurrentes de la Agenda -->
-  <div *ngIf="!isLoading && recurringBills.length > 0">
-    <ion-list-header>
-      <ion-label>📅 Pagos recurrentes de la Agenda</ion-label>
-    </ion-list-header>
-    <ion-item-sliding *ngFor="let bill of recurringBills">
-      <ion-item>
-        <div class="color-ball" [style.background]="billCatColor(bill)" slot="start"></div>
-        <ion-label>
-          <h3>{{ bill.name }}</h3>
-          <p>{{ billCatName(bill) || 'Sin categoría' }} · Día {{ bill.dueDay }}</p>
-        </ion-label>
-        <ion-badge slot="end" [color]="bill.status === 'paid' ? 'success' : 'warning'">
-          {{ bill.status === 'paid' ? 'Pagado' : 'Pendiente' }}
-        </ion-badge>
-        <ion-note slot="end" style="margin-left:8px">{{ bill.amount | currency:'COP':'symbol':'1.0-0' }}</ion-note>
-        <ion-button slot="end" fill="clear" size="small" (click)="toggleBill(bill)">
-          <ion-icon slot="icon-only" [name]="bill.status === 'paid' ? 'arrow-undo-outline' : 'checkmark-outline'"
-                    [color]="bill.status === 'paid' ? 'medium' : 'success'"></ion-icon>
-        </ion-button>
-      </ion-item>
-    </ion-item-sliding>
+  <!-- ─── AGENDA (recurring bills) ─── -->
+  <div *ngIf="!isLoading && selectedSegment === 'agenda'" class="agenda-section">
+
+    <!-- Month navigation -->
+    <div class="agenda-month-nav">
+      <ion-button fill="clear" color="dark" (click)="changeMonth(-1)">
+        <ion-icon slot="icon-only" name="chevron-back-outline"></ion-icon>
+      </ion-button>
+      <span class="agenda-month-title">{{ monthName }} {{ currentYear }}</span>
+      <ion-button fill="clear" color="dark" (click)="changeMonth(1)">
+        <ion-icon slot="icon-only" name="chevron-forward-outline"></ion-icon>
+      </ion-button>
+    </div>
+
+    <!-- KPI cards -->
+    <div class="agenda-kpi-grid" *ngIf="recurringBills.length > 0">
+      <div class="kpi-tile kpi-total">
+        <div class="kpi-icon"><ion-icon name="calendar-outline"></ion-icon></div>
+        <div class="kpi-val">{{ billsTotal | currency:'COP':'symbol':'1.0-0' }}</div>
+        <div class="kpi-lbl">Total</div>
+      </div>
+      <div class="kpi-tile kpi-pending">
+        <div class="kpi-icon"><ion-icon name="time-outline"></ion-icon></div>
+        <div class="kpi-val">{{ billsTotalPending | currency:'COP':'symbol':'1.0-0' }}</div>
+        <div class="kpi-lbl">Pendiente</div>
+      </div>
+      <div class="kpi-tile kpi-paid">
+        <div class="kpi-icon"><ion-icon name="checkmark-done-outline"></ion-icon></div>
+        <div class="kpi-val">{{ billsTotalPaid | currency:'COP':'symbol':'1.0-0' }}</div>
+        <div class="kpi-lbl">Pagado</div>
+      </div>
+      <div class="kpi-tile kpi-progress">
+        <div class="kpi-icon"><ion-icon name="bar-chart-outline"></ion-icon></div>
+        <div class="kpi-val progress-pct">{{ billsPercent }}%</div>
+        <div class="kpi-lbl">Progreso</div>
+        <div class="kpi-bar-wrap">
+          <div class="kpi-bar-fill" [style.width.%]="billsPercent"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Day filter chips -->
+    <div class="day-chips-wrap" *ngIf="activeDays.length > 1">
+      <div class="day-chips">
+        <div class="day-chip" [class.chip-active]="dayFilter === null" (click)="dayFilter = null">
+          Todos
+        </div>
+        <div class="day-chip" *ngFor="let day of activeDays"
+             [class.chip-active]="dayFilter === day"
+             (click)="dayFilter = (dayFilter === day ? null : day)">
+          Día {{ day }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Bill list -->
+    <div class="bills-wrap" *ngIf="filteredBills.length > 0">
+      <div class="bill-card" *ngFor="let bill of filteredBills"
+           [class.bill-paid]="bill.status === 'paid'"
+           [class.bill-overdue]="isOverdue(bill)"
+           [class.bill-today]="isDueToday(bill)">
+
+        <div class="bill-day-badge"
+             [class.badge-paid]="bill.status === 'paid'"
+             [class.badge-overdue]="isOverdue(bill)"
+             [class.badge-today]="isDueToday(bill)">
+          <span>{{ bill.dueDay }}</span>
+        </div>
+
+        <div class="bill-dot" [style.background]="billCatColor(bill)"></div>
+
+        <div class="bill-info">
+          <div class="bill-name">{{ bill.name }}</div>
+          <div class="bill-meta">
+            <span *ngIf="billCatName(bill)">{{ billCatName(bill) }}</span>
+            <span class="tag-overdue" *ngIf="isOverdue(bill)">Vencido</span>
+            <span class="tag-today"   *ngIf="isDueToday(bill)">Hoy</span>
+          </div>
+        </div>
+
+        <div class="bill-right">
+          <div class="bill-amount" [class.amount-paid]="bill.status === 'paid'">
+            {{ bill.amount | currency:'COP':'symbol':'1.0-0' }}
+          </div>
+          <ion-button fill="clear" size="small" class="toggle-btn" (click)="toggleBill(bill)">
+            <ion-icon slot="icon-only"
+                      [name]="bill.status === 'paid' ? 'checkmark-circle' : 'ellipse-outline'"
+                      [color]="bill.status === 'paid' ? 'success' : 'medium'"></ion-icon>
+          </ion-button>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="recurringBills.length === 0" class="empty-msg" style="margin-top: 40px">
+      <ion-icon name="calendar-outline"></ion-icon>
+      <p>No hay pagos recurrentes en la agenda para {{ monthName }}</p>
+    </div>
   </div>
 
   <ion-fab vertical="bottom" horizontal="end" slot="fixed">
@@ -105,6 +193,7 @@
   </ion-fab>
 </ion-content>
 
+<!-- ─── MODAL ─── -->
 <ion-modal [isOpen]="showModal" (didDismiss)="closeModal()">
   <ng-template>
     <ion-header>

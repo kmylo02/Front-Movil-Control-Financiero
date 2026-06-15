@@ -1,3 +1,280 @@
+.loading-box {
+  display: flex;
+  justify-content: center;
+  padding: 60px 0;
+}
+
+// ─── Recurrentes list ───────────────────────────
+.rec-list { padding: 8px 12px 90px; }
+
+.rec-item-wrap { margin-bottom: 8px; border-radius: 14px; overflow: hidden; }
+
+.rec-item {
+  --background: var(--ion-card-background, var(--ion-item-background));
+  --border-radius: 14px;
+  --padding-start: 12px;
+  --inner-padding-end: 12px;
+  border-radius: 14px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.12);
+}
+
+.rec-icon-wrap {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba(var(--ion-color-tertiary-rgb), 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 4px;
+  ion-icon { font-size: 20px; }
+}
+
+.rec-name { font-size: 15px; font-weight: 600; color: var(--ion-text-color); }
+.rec-meta { font-size: 12px; color: var(--ion-color-medium); margin: 2px 0 4px; }
+.rec-mode-badge { font-size: 10px; }
+.rec-amount { font-size: 14px; font-weight: 700; color: var(--ion-text-color); white-space: nowrap; }
+
+// ─── Pending section ───────────────────────────
+.pending-section { padding: 10px 14px 90px; }
+
+.pending-card {
+  background: var(--ion-card-background, var(--ion-item-background));
+  border-radius: 14px;
+  padding: 14px 14px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.12);
+  gap: 8px;
+}
+
+.pending-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.pending-icon-wrap {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: rgba(var(--ion-color-warning-rgb), 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  ion-icon { font-size: 20px; }
+}
+
+.pending-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ion-text-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pending-meta { font-size: 12px; color: var(--ion-color-medium); margin-top: 2px; }
+.confirm-btn  { --border-radius: 20px; flex-shrink: 0; }
+
+// ─── Agenda section ───────────────────────────
+.agenda-section { padding: 0 14px 90px; }
+
+.agenda-month-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0 8px;
+
+  .agenda-month-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--ion-color-dark);
+    text-transform: capitalize;
+  }
+  ion-button { --padding-start: 6px; --padding-end: 6px; }
+}
+
+// KPI 2x2 grid
+.agenda-kpi-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.kpi-tile {
+  border-radius: 16px;
+  padding: 16px 14px 12px;
+  position: relative;
+  overflow: hidden;
+
+  .kpi-icon {
+    margin-bottom: 8px;
+    ion-icon { font-size: 22px; }
+  }
+  .kpi-val  { font-size: 15px; font-weight: 800; margin-bottom: 2px; }
+  .kpi-lbl  { font-size: 11px; opacity: 0.75; text-transform: uppercase; letter-spacing: 0.4px; }
+
+  &.kpi-total   { background: rgba(99, 102, 241, 0.15);  .kpi-icon ion-icon, .kpi-val, .kpi-lbl { color: #818cf8; } }
+  &.kpi-pending { background: rgba(239, 68, 68, 0.15);   .kpi-icon ion-icon, .kpi-val, .kpi-lbl { color: #f87171; } }
+  &.kpi-paid    { background: rgba(22, 163, 74, 0.15);   .kpi-icon ion-icon, .kpi-val, .kpi-lbl { color: #4ade80; } }
+  &.kpi-progress {
+    background: rgba(59, 130, 246, 0.15);
+    .kpi-icon ion-icon, .progress-pct, .kpi-lbl { color: #60a5fa; }
+  }
+}
+
+.kpi-bar-wrap {
+  height: 4px;
+  background: rgba(59, 130, 246, 0.15);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 8px;
+
+  .kpi-bar-fill {
+    height: 100%;
+    background: #3b82f6;
+    border-radius: 4px;
+    transition: width 0.4s ease;
+  }
+}
+
+// Day filter chips
+.day-chips-wrap {
+  overflow-x: auto;
+  margin-bottom: 14px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}
+
+.day-chips {
+  display: flex;
+  gap: 8px;
+  padding: 2px 2px 4px;
+  width: max-content;
+}
+
+.day-chip {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  background: #f3f4f6;
+  color: var(--ion-color-medium-shade);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+
+  &.chip-active {
+    background: var(--ion-color-tertiary);
+    color: #ffffff;
+  }
+}
+
+// Bills list
+.bills-wrap { display: flex; flex-direction: column; gap: 8px; }
+
+.bill-card {
+  background: var(--ion-card-background, var(--ion-item-background));
+  border-radius: 14px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.12);
+
+  &.bill-paid    { opacity: 0.75; .bill-name { color: var(--ion-color-medium); text-decoration: line-through; } }
+  &.bill-overdue { border-left: 3px solid #ef4444; }
+  &.bill-today   { border-left: 3px solid #f59e0b; }
+}
+
+.bill-day-badge {
+  min-width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: rgba(var(--ion-color-medium-rgb), 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  span { font-size: 15px; font-weight: 700; color: var(--ion-text-color); }
+
+  &.badge-paid    { background: rgba(22, 163, 74, 0.2);  span { color: #4ade80; } }
+  &.badge-overdue { background: rgba(239, 68, 68, 0.2);  span { color: #f87171; } }
+  &.badge-today   { background: rgba(245, 158, 11, 0.2); span { color: #fbbf24; } }
+}
+
+.bill-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+.bill-info {
+  flex: 1;
+  min-width: 0;
+
+  .bill-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--ion-text-color);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .bill-meta {
+    display: flex;
+    gap: 5px;
+    font-size: 11px;
+    color: var(--ion-color-medium);
+    margin-top: 2px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+}
+
+.tag-overdue {
+  background: #fee2e2; color: #dc2626;
+  padding: 1px 5px; border-radius: 5px; font-size: 10px; font-weight: 600;
+}
+.tag-today {
+  background: #fef3c7; color: #d97706;
+  padding: 1px 5px; border-radius: 5px; font-size: 10px; font-weight: 600;
+}
+
+.bill-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+
+  .bill-amount {
+    font-size: 13px; font-weight: 700; color: var(--ion-text-color);
+    &.amount-paid { color: #4ade80; }
+  }
+  .toggle-btn {
+    --padding-start: 0; --padding-end: 0;
+    height: 28px;
+    ion-icon { font-size: 22px; }
+  }
+}
+
+// Empty state
+.empty-msg {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 48px 0;
+  color: var(--ion-color-medium);
+  gap: 10px;
+  ion-icon { font-size: 48px; }
+  p { font-size: 14px; margin: 0; text-align: center; }
+}
+
+// Shared color-ball (used by original template snippets)
 .color-ball {
   width: 10px;
   height: 10px;

@@ -1,10 +1,11 @@
-<ion-header>
-  <ion-toolbar color="primary">
-    <ion-title>
-      <ng-container *ngIf="user$ | async as user">Hola, {{ user.name }}</ng-container>
-    </ion-title>
+<ion-header class="ion-no-border">
+  <ion-toolbar class="header-toolbar">
+    <div slot="start" class="header-greeting" *ngIf="user$ | async as user">
+      <span class="greeting-text">Hola, {{ user.name.split(' ')[0] }}</span>
+      <span class="greeting-sub">{{ monthName }} {{ year }}</span>
+    </div>
     <ion-buttons slot="end">
-      <ion-button (click)="logout()">
+      <ion-button (click)="logout()" fill="clear" color="medium">
         <ion-icon slot="icon-only" name="log-out-outline"></ion-icon>
       </ion-button>
     </ion-buttons>
@@ -16,75 +17,163 @@
     <ion-refresher-content></ion-refresher-content>
   </ion-refresher>
 
-  <div class="ion-padding">
-    <p class="month-label">{{ monthName }} {{ year }}</p>
-
-    <!-- KPI Cards -->
-    <ng-container *ngIf="!isLoading && summary as s">
-      <ion-card [color]="balance >= 0 ? 'success' : 'danger'" class="balance-card">
-        <ion-card-content class="ion-text-center">
-          <p class="kpi-label">Balance del mes</p>
-          <h2 class="kpi-value">{{ balance | currency:'COP':'symbol':'1.0-0' }}</h2>
-        </ion-card-content>
-      </ion-card>
-
-      <ion-grid>
-        <ion-row>
-          <ion-col size="6">
-            <ion-card>
-              <ion-card-content>
-                <ion-icon name="trending-up-outline" color="success"></ion-icon>
-                <p class="kpi-label">Ingresos</p>
-                <p class="kpi-val">{{ s.totalIncomes | currency:'COP':'symbol':'1.0-0' }}</p>
-              </ion-card-content>
-            </ion-card>
-          </ion-col>
-          <ion-col size="6">
-            <ion-card>
-              <ion-card-content>
-                <ion-icon name="trending-down-outline" color="danger"></ion-icon>
-                <p class="kpi-label">Gastos</p>
-                <p class="kpi-val">{{ s.totalExpenses | currency:'COP':'symbol':'1.0-0' }}</p>
-              </ion-card-content>
-            </ion-card>
-          </ion-col>
-        </ion-row>
-      </ion-grid>
-
-      <!-- Budget progress -->
-      <ion-card *ngIf="budgetTotal > 0">
-        <ion-card-header>
-          <ion-card-subtitle>Presupuesto mensual</ion-card-subtitle>
-        </ion-card-header>
-        <ion-card-content>
-          <div class="budget-row">
-            <span>{{ budgetPercent | number:'1.0-0' }}% usado</span>
-            <span>{{ budgetTotal | currency:'COP':'symbol':'1.0-0' }}</span>
-          </div>
-          <ion-progress-bar [value]="budgetPercent / 100" [color]="budgetColor"></ion-progress-bar>
-        </ion-card-content>
-      </ion-card>
-
-      <!-- Donut chart by category -->
-      <ion-card *ngIf="s.byCategory?.length">
-        <ion-card-header>
-          <ion-card-subtitle>Gastos por categoría</ion-card-subtitle>
-        </ion-card-header>
-        <ion-card-content>
-          <canvas #donutCanvas style="max-height: 280px;"></canvas>
-        </ion-card-content>
-      </ion-card>
-    </ng-container>
-
-    <!-- Loading -->
-    <div *ngIf="isLoading" class="ion-text-center ion-padding">
-      <ion-spinner name="crescent" color="primary"></ion-spinner>
-    </div>
-
-    <!-- Empty state -->
-    <div *ngIf="!isLoading && !summary" class="ion-text-center ion-padding">
-      <ion-icon name="wallet-outline" size="large" color="medium"></ion-icon>
-      <p>Sin datos para este mes</p>
-    </div>
+  <!-- Loading -->
+  <div *ngIf="isLoading" class="loading-container">
+    <ion-spinner name="crescent" color="primary"></ion-spinner>
   </div>
+
+  <ng-container *ngIf="!isLoading && summary as s">
+
+    <!-- ─── Hero balance ─── -->
+    <div class="hero-card" [class.hero-negative]="balance < 0">
+      <div class="hero-label">Disponible este mes</div>
+      <div class="hero-balance">{{ balance | currency:'COP':'symbol':'1.0-0' }}</div>
+
+      <!-- Ingresos / Gastado total -->
+      <div class="hero-row">
+        <div class="hero-stat">
+          <ion-icon name="trending-up-outline"></ion-icon>
+          <div>
+            <div class="hero-stat-lbl">Ingresos</div>
+            <div class="hero-stat-val">{{ s.totalIncomes | currency:'COP':'symbol':'1.0-0' }}</div>
+          </div>
+        </div>
+        <div class="hero-divider"></div>
+        <div class="hero-stat">
+          <ion-icon name="trending-down-outline" class="icon-expense"></ion-icon>
+          <div>
+            <div class="hero-stat-lbl">Gastado total</div>
+            <div class="hero-stat-val">{{ totalGastado | currency:'COP':'symbol':'1.0-0' }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Desglose pequeño -->
+      <div class="hero-breakdown">
+        <span class="breakdown-item">
+          <ion-icon name="receipt-outline"></ion-icon>
+          Gastos: {{ s.totalExpenses | currency:'COP':'symbol':'1.0-0' }}
+        </span>
+        <span class="breakdown-sep">+</span>
+        <span class="breakdown-item">
+          <ion-icon name="calendar-outline"></ion-icon>
+          Agenda: {{ agendaTotalPaid | currency:'COP':'symbol':'1.0-0' }}
+        </span>
+      </div>
+
+      <!-- Proyectado si paga todos los pendientes -->
+      <div class="hero-projected" *ngIf="agendaTotalPending > 0">
+        <ion-icon name="time-outline"></ion-icon>
+        Pendiente agenda: {{ agendaTotalPending | currency:'COP':'symbol':'1.0-0' }}
+        &nbsp;→&nbsp;
+        <strong>Proyectado: {{ balanceProyectado | currency:'COP':'symbol':'1.0-0' }}</strong>
+      </div>
+    </div>
+
+    <!-- ─── Content section ─── -->
+    <div class="section-wrapper">
+
+      <!-- Budget -->
+      <div class="budget-card" *ngIf="budgetTotal > 0">
+        <div class="budget-header">
+          <span class="section-title">Presupuesto</span>
+          <span class="budget-percent"
+                [class.warning]="budgetPercent >= 80 && budgetPercent < 100"
+                [class.danger]="budgetPercent >= 100">
+            {{ budgetPercent | number:'1.0-0' }}% usado
+          </span>
+        </div>
+        <ion-progress-bar [value]="budgetPercent / 100" [color]="budgetColor" class="budget-bar"></ion-progress-bar>
+        <div class="budget-footer">
+          <span>Límite: {{ budgetTotal | currency:'COP':'symbol':'1.0-0' }}</span>
+          <span>Gastado: {{ s.totalExpenses | currency:'COP':'symbol':'1.0-0' }}</span>
+        </div>
+      </div>
+
+      <!-- Agenda de Pagos -->
+      <ng-container *ngIf="agendaBills.length > 0">
+        <div class="section-header">
+          <span class="section-title">Agenda de Pagos</span>
+          <span class="section-tag">{{ monthName }}</span>
+        </div>
+
+        <!-- KPI tiles -->
+        <div class="agenda-kpi-row">
+          <div class="agenda-kpi-tile tile-pending">
+            <div class="kpi-tile-val">{{ agendaTotalPending | currency:'COP':'symbol':'1.0-0' }}</div>
+            <div class="kpi-tile-lbl">Pendiente</div>
+            <div class="kpi-tile-count">{{ agendaPending.length }} pagos</div>
+          </div>
+          <div class="agenda-kpi-tile tile-paid">
+            <div class="kpi-tile-val">{{ agendaTotalPaid | currency:'COP':'symbol':'1.0-0' }}</div>
+            <div class="kpi-tile-lbl">Pagado</div>
+            <div class="kpi-tile-count">{{ agendaPaid.length }} pagos</div>
+          </div>
+          <div class="agenda-kpi-tile tile-progress">
+            <div class="kpi-tile-val progress-val">{{ agendaPercent }}%</div>
+            <div class="kpi-tile-lbl">Progreso</div>
+            <div class="progress-mini">
+              <div class="progress-mini-fill" [style.width.%]="agendaPercent"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bill list -->
+        <div class="bills-card">
+          <div class="bill-row" *ngFor="let bill of agendaSorted"
+               [class.bill-paid]="bill.status === 'paid'"
+               [class.bill-overdue]="isOverdue(bill)"
+               [class.bill-today]="isDueToday(bill)">
+
+            <div class="bill-day-badge"
+                 [class.badge-paid]="bill.status === 'paid'"
+                 [class.badge-overdue]="isOverdue(bill)"
+                 [class.badge-today]="isDueToday(bill)">
+              <span>{{ bill.dueDay }}</span>
+            </div>
+
+            <div class="bill-dot" [style.background]="billCatColor(bill)"></div>
+
+            <div class="bill-info">
+              <div class="bill-name">{{ bill.name }}</div>
+              <div class="bill-meta">
+                <span *ngIf="billCatName(bill)">{{ billCatName(bill) }}</span>
+                <span class="overdue-tag" *ngIf="isOverdue(bill)">Vencido</span>
+                <span class="today-tag"   *ngIf="isDueToday(bill)">Hoy</span>
+              </div>
+            </div>
+
+            <div class="bill-right">
+              <div class="bill-amount" [class.amount-paid]="bill.status === 'paid'">
+                {{ bill.amount | currency:'COP':'symbol':'1.0-0' }}
+              </div>
+              <ion-button fill="clear" size="small" class="toggle-btn" (click)="toggleBill(bill)">
+                <ion-icon slot="icon-only"
+                          [name]="bill.status === 'paid' ? 'checkmark-circle' : 'ellipse-outline'"
+                          [color]="bill.status === 'paid' ? 'success' : 'medium'"></ion-icon>
+              </ion-button>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- Donut chart -->
+      <ng-container *ngIf="s.byCategory?.length">
+        <div class="section-header" style="margin-top: 24px">
+          <span class="section-title">Por categoría</span>
+        </div>
+        <div class="donut-card">
+          <canvas #donutCanvas style="max-height: 260px;"></canvas>
+        </div>
+      </ng-container>
+
+    </div>
+  </ng-container>
+
+  <!-- Empty -->
+  <div *ngIf="!isLoading && !summary" class="empty-state">
+    <ion-icon name="wallet-outline"></ion-icon>
+    <p>Sin datos para este mes</p>
+  </div>
+
 </ion-content>
