@@ -2,11 +2,14 @@
 .custom-tab-bar {
   --background: var(--ion-card-background, #1e1e1e);
   --border: none;
+  --padding-bottom: env(safe-area-inset-bottom, 8px);
   border-top: none;
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.18);
   border-radius: 20px 20px 0 0;
-  padding: 6px 4px 0;
-  height: 68px;
+  padding-top: 6px;
+  padding-left: 4px;
+  padding-right: 4px;
+  height: calc(64px + env(safe-area-inset-bottom, 8px));
 }
 
 // Individual tab button
