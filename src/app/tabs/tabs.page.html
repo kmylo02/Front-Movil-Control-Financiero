@@ -1,38 +1,32 @@
 <ion-tabs>
-  <ion-tab-bar slot="bottom">
-    <ion-tab-button tab="dashboard" href="/tabs/dashboard">
-      <ion-icon name="grid-outline"></ion-icon>
+  <ion-tab-bar slot="bottom" class="custom-tab-bar">
+
+    <ion-tab-button tab="dashboard" href="/tabs/dashboard" class="tab-btn">
+      <ion-icon name="grid-outline" class="tab-icon"></ion-icon>
       <ion-label>Inicio</ion-label>
     </ion-tab-button>
 
-    <ion-tab-button tab="gastos" href="/tabs/gastos">
-      <ion-icon name="trending-down-outline"></ion-icon>
+    <ion-tab-button tab="gastos" href="/tabs/gastos" class="tab-btn">
+      <ion-icon name="trending-down-outline" class="tab-icon"></ion-icon>
       <ion-label>Gastos</ion-label>
     </ion-tab-button>
 
-    <ion-tab-button tab="ingresos" href="/tabs/ingresos">
-      <ion-icon name="trending-up-outline"></ion-icon>
-      <ion-label>Ingresos</ion-label>
-    </ion-tab-button>
-
-    <ion-tab-button tab="recurrentes" href="/tabs/recurrentes">
-      <ion-icon name="repeat-outline"></ion-icon>
-      <ion-label>Recurrentes</ion-label>
-    </ion-tab-button>
-
-    <ion-tab-button tab="agenda" href="/tabs/agenda">
-      <ion-icon name="calendar-outline"></ion-icon>
+    <ion-tab-button tab="agenda" href="/tabs/agenda" class="tab-btn center-btn">
+      <div class="fab-center">
+        <ion-icon name="calendar-outline"></ion-icon>
+      </div>
       <ion-label>Agenda</ion-label>
     </ion-tab-button>
 
-    <ion-tab-button tab="reportes" href="/tabs/reportes">
-      <ion-icon name="bar-chart-outline"></ion-icon>
-      <ion-label>Reportes</ion-label>
+    <ion-tab-button tab="ingresos" href="/tabs/ingresos" class="tab-btn">
+      <ion-icon name="trending-up-outline" class="tab-icon"></ion-icon>
+      <ion-label>Ingresos</ion-label>
     </ion-tab-button>
 
-    <ion-tab-button tab="categorias" href="/tabs/categorias">
-      <ion-icon name="pricetags-outline"></ion-icon>
-      <ion-label>Categorías</ion-label>
+    <ion-tab-button class="tab-btn" (click)="openMore()">
+      <ion-icon name="ellipsis-horizontal-outline" class="tab-icon"></ion-icon>
+      <ion-label>Más</ion-label>
     </ion-tab-button>
+
   </ion-tab-bar>
 </ion-tabs>

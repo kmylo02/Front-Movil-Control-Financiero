@@ -1,1 +1,119 @@
+// Tab bar base
+.custom-tab-bar {
+  --background: var(--ion-card-background, #1e1e1e);
+  --border: none;
+  border-top: none;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.18);
+  border-radius: 20px 20px 0 0;
+  padding: 6px 4px 0;
+  height: 68px;
+}
 
+// Individual tab button
+.tab-btn {
+  --color: var(--ion-color-medium);
+  --color-selected: var(--ion-color-primary);
+  --ripple-color: transparent;
+  flex-direction: column;
+  position: relative;
+  padding-top: 4px;
+
+  ion-label {
+    font-size: 10px;
+    font-weight: 500;
+    margin-top: 2px;
+    letter-spacing: 0.2px;
+  }
+
+  .tab-icon {
+    font-size: 22px;
+    transition: transform 0.2s ease;
+  }
+
+  &.tab-selected .tab-icon,
+  &[aria-selected="true"] .tab-icon {
+    transform: scale(1.15);
+  }
+
+  // Active indicator dot
+  &::before {
+    content: '';
+    display: block;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: transparent;
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    transition: background 0.2s ease;
+  }
+
+  &[aria-selected="true"]::before {
+    background: var(--ion-color-primary);
+  }
+}
+
+// Center button (Agenda) with elevated circle
+.center-btn {
+  --color: #ffffff;
+  --color-selected: #ffffff;
+  padding-top: 0;
+
+  .fab-center {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: var(--ion-color-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: -18px;
+    box-shadow: 0 4px 14px rgba(var(--ion-color-primary-rgb), 0.45);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+    ion-icon {
+      font-size: 24px;
+      color: #ffffff;
+    }
+  }
+
+  &[aria-selected="true"] .fab-center {
+    transform: scale(1.08);
+    box-shadow: 0 6px 18px rgba(var(--ion-color-primary-rgb), 0.6);
+  }
+
+  ion-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--ion-color-primary);
+    margin-top: 4px;
+  }
+}
+
+// Action sheet for Más menu
+::ng-deep .more-action-sheet {
+  .action-sheet-container {
+    border-radius: 20px 20px 0 0;
+  }
+
+  .action-sheet-title {
+    font-weight: 700;
+    font-size: 15px;
+  }
+
+  .action-sheet-button {
+    font-size: 15px;
+    font-weight: 500;
+    --button-color: var(--ion-text-color);
+
+    .action-sheet-icon {
+      color: var(--ion-color-primary);
+    }
+  }
+
+  .action-sheet-cancel .action-sheet-button-inner {
+    color: var(--ion-color-danger);
+  }
+}
