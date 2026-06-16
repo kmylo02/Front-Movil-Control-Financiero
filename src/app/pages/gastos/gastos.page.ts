@@ -34,8 +34,16 @@ export class GastosPage implements OnInit {
       ? this.expenses.filter(e => e.description.toLowerCase().includes(this.searchText.toLowerCase()))
       : [...this.expenses];
     switch (this.sortBy) {
-      case 'date-desc':   list.sort((a, b) => b.date.localeCompare(a.date)); break;
-      case 'date-asc':    list.sort((a, b) => a.date.localeCompare(b.date)); break;
+      case 'date-desc':
+        list.sort((a, b) => {
+          const d = b.date.localeCompare(a.date);
+          return d !== 0 ? d : (b.createdAt ?? '').localeCompare(a.createdAt ?? '');
+        }); break;
+      case 'date-asc':
+        list.sort((a, b) => {
+          const d = a.date.localeCompare(b.date);
+          return d !== 0 ? d : (a.createdAt ?? '').localeCompare(b.createdAt ?? '');
+        }); break;
       case 'amount-desc': list.sort((a, b) => b.amount - a.amount); break;
       case 'amount-asc':  list.sort((a, b) => a.amount - b.amount); break;
     }

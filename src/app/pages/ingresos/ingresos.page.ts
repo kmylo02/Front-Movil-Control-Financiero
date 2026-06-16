@@ -20,10 +20,34 @@ export class IngresosPage implements OnInit {
   editingId: string | null = null;
   form!: FormGroup;
 
+  searchText = '';
+  sortBy: 'date-desc' | 'date-asc' | 'amount-desc' | 'amount-asc' = 'date-desc';
+
   today = new Date();
   year = this.today.getFullYear();
   month = this.today.getMonth() + 1;
   monthName = MONTH_NAMES[this.month - 1];
+
+  get filtered(): Income[] {
+    let list = this.searchText.trim()
+      ? this.incomes.filter(i => i.description.toLowerCase().includes(this.searchText.toLowerCase()))
+      : [...this.incomes];
+    switch (this.sortBy) {
+      case 'date-desc':
+        list.sort((a, b) => {
+          const d = b.date.localeCompare(a.date);
+          return d !== 0 ? d : (b.createdAt ?? '').localeCompare(a.createdAt ?? '');
+        }); break;
+      case 'date-asc':
+        list.sort((a, b) => {
+          const d = a.date.localeCompare(b.date);
+          return d !== 0 ? d : (a.createdAt ?? '').localeCompare(b.createdAt ?? '');
+        }); break;
+      case 'amount-desc': list.sort((a, b) => b.amount - a.amount); break;
+      case 'amount-asc':  list.sort((a, b) => a.amount - b.amount); break;
+    }
+    return list;
+  }
 
   constructor(
     private incomesService: IncomesService,
@@ -43,9 +67,14 @@ export class IngresosPage implements OnInit {
       description: ['', Validators.required],
       amount: [null, [Validators.required, Validators.min(0.01)]],
       categoryId: ['', Validators.required],
-      date: [new Date().toISOString().split('T')[0], Validators.required],
+      date: [this.todayLocal(), Validators.required],
       notes: [''],
     });
+  }
+
+  private todayLocal(): string {
+    const t = new Date();
+    return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`;
   }
 
   loadData() {
@@ -93,7 +122,7 @@ export class IngresosPage implements OnInit {
       description: income.description,
       amount: income.amount,
       categoryId: (income.categoryId as any)?._id || income.categoryId,
-      date: income.date?.toString().split('T')[0],
+      date: (income.date as string)?.substring(0, 10),
       notes: income.notes || '',
     });
     this.showModal = true;
@@ -154,7 +183,7 @@ export class IngresosPage implements OnInit {
     return this.categories.find(c => c._id === categoryId)?.name || '';
   }
 
-  get total() { return this.incomes.reduce((sum, i) => sum + i.amount, 0); }
+  get total() { return this.filtered.reduce((sum, i) => sum + i.amount, 0); }
 
   private async showToast(message: string, color = 'success') {
     const toast = await this.toastCtrl.create({ message, duration: 2000, color, position: 'bottom' });
