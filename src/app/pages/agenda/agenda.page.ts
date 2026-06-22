@@ -120,6 +120,26 @@ export class AgendaPage implements OnInit {
     this.loadData();
   }
 
+  async quickNewCategory(): Promise<void> {
+    const alert = await this.alertCtrl.create({
+      header: 'Nueva categoría',
+      inputs: [{ name: 'name', type: 'text', placeholder: 'Nombre (ej: Servicios)' }],
+      buttons: [
+        { text: 'Cancelar', role: 'cancel' },
+        {
+          text: 'Crear',
+          handler: (data) => {
+            if (!data.name?.trim()) return false;
+            this.categoriesService.create({ name: data.name.trim(), type: 'expense', color: '#6366f1', icon: 'calendar' })
+              .subscribe({ next: (cat) => { this.categories = [...this.categories, cat]; this.form.patchValue({ categoryId: cat._id }); } });
+            return true;
+          },
+        },
+      ],
+    });
+    await alert.present();
+  }
+
   openAdd() { this.editingId = null; this.buildForm(); this.showModal = true; }
 
   openEdit(bill: BillItem) {
