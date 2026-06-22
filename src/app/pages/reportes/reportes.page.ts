@@ -13,6 +13,7 @@ Chart.register(...registerables);
 @Component({
   selector: 'app-reportes',
   templateUrl: './reportes.page.html',
+  styleUrls: ['./reportes.page.scss'],
   standalone: false,
 })
 export class ReportesPage implements OnInit {
@@ -80,11 +81,11 @@ export class ReportesPage implements OnInit {
       data: {
         labels: ['Mes anterior', 'Mismo mes año ant.', 'Mes actual'],
         datasets: [{
-          label: 'Gastos',
+          label: 'Gastos totales',
           data: [
-            this.comparison.previousMonth?.expenses || 0,
-            this.comparison.sameMonthLastYear?.expenses || 0,
-            this.comparison.current?.expenses || 0,
+            this.comparison.previousMonth?.totalGastado || 0,
+            this.comparison.sameMonthLastYear?.totalGastado || 0,
+            this.comparison.current?.totalGastado || 0,
           ],
           backgroundColor: ['#94a3b8', '#f59e0b', '#6366f1'],
           borderRadius: 6,
@@ -144,6 +145,12 @@ export class ReportesPage implements OnInit {
     if (!prev) return 'medium';
     return current > prev ? 'danger' : 'success';
   }
+
+  get currentTotalGastado(): number { return this.comparison?.current?.totalGastado ?? 0; }
+  get currentBalance(): number { return this.comparison?.current?.balance ?? 0; }
+  get currentIncomes(): number { return this.comparison?.current?.incomes ?? 0; }
+  get summaryTotalGastado(): number { return this.summary?.totalGastado ?? 0; }
+  get summaryBalance(): number { return this.summary?.balance ?? 0; }
 
   prevMonth() {
     this.month--; if (this.month < 1) { this.month = 12; this.year--; }

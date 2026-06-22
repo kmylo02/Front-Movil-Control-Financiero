@@ -23,15 +23,40 @@ export class AgendaPage implements OnInit {
   year     = this.today.getFullYear();
   month    = this.today.getMonth() + 1;
   todayDay = this.today.getDate();
+  dayFilter: number | null = null;
 
   get monthName() { return MONTH_NAMES[this.month - 1]; }
-  get pending()   { return this.bills.filter(b => b.status === 'pending'); }
-  get paid()      { return this.bills.filter(b => b.status === 'paid'); }
+
+  get activeDays(): number[] {
+    const days = [...new Set(this.bills.map(b => b.dueDay))];
+    return days.sort((a, b) => a - b);
+  }
+
+  get filteredBills(): BillItem[] {
+    const base = this.dayFilter !== null
+      ? this.bills.filter(b => b.dueDay === this.dayFilter)
+      : this.bills;
+    return [...base].sort((a, b) => {
+      if (a.status === b.status) return a.dueDay - b.dueDay;
+      return a.status === 'pending' ? -1 : 1;
+    });
+  }
+
+  get pending()   { return this.filteredBills.filter(b => b.status === 'pending'); }
+  get paid()      { return this.filteredBills.filter(b => b.status === 'paid'); }
   get totalPending() { return this.pending.reduce((s, b) => s + b.amount, 0); }
   get totalPaid()    { return this.paid.reduce((s, b) => s + b.amount, 0); }
   get paidPercent()  {
-    const total = this.bills.reduce((s, b) => s + b.amount, 0);
+    const total = this.filteredBills.reduce((s, b) => s + b.amount, 0);
     return total > 0 ? Math.round((this.totalPaid / total) * 100) : 0;
+  }
+
+  setDayFilter(day: number | null) {
+    this.dayFilter = this.dayFilter === day ? null : day;
+  }
+
+  billCountForDay(day: number): number {
+    return this.bills.filter(b => b.dueDay === day).length;
   }
 
   isOverdue(bill: BillItem): boolean {

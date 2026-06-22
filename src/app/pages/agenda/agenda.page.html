@@ -33,6 +33,27 @@
   </div>
 
   <ng-container *ngIf="!isLoading">
+
+    <!-- Filtro por día -->
+    <div *ngIf="activeDays.length > 1" class="day-filter-wrap ion-padding-horizontal">
+      <ion-chip
+        [color]="dayFilter === null ? 'primary' : 'medium'"
+        [outline]="dayFilter !== null"
+        (click)="setDayFilter(null)">
+        Todos
+      </ion-chip>
+      <ion-chip
+        *ngFor="let d of activeDays"
+        [color]="dayFilter === d ? 'primary' : 'medium'"
+        [outline]="dayFilter !== d"
+        (click)="setDayFilter(d)">
+        Día {{ d }}
+        <ion-badge *ngIf="dayFilter !== d" color="medium" style="margin-left:4px;font-size:10px">
+          {{ billCountForDay(d) }}
+        </ion-badge>
+      </ion-chip>
+    </div>
+
     <!-- Resumen -->
     <ion-grid class="summary-grid">
       <ion-row>

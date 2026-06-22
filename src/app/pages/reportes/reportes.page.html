@@ -35,9 +35,51 @@
 
   <!-- REPORTES -->
   <div *ngIf="!isLoading && selectedSegment === 'reportes'">
+
+    <!-- Balance del mes -->
+    <ion-card *ngIf="comparison" class="balance-card">
+      <ion-card-content>
+        <p class="balance-label">Balance {{ monthName }} {{ year }}</p>
+        <h2 class="balance-amount" [class.text-success]="currentBalance >= 0" [class.text-danger]="currentBalance < 0">
+          {{ currentBalance | currency:'COP':'symbol':'1.0-0' }}
+        </h2>
+        <ion-grid class="stat-mini-grid">
+          <ion-row>
+            <ion-col>
+              <div class="stat-mini">
+                <ion-icon name="trending-up-outline" color="success"></ion-icon>
+                <span class="stat-mini-val">{{ currentIncomes | currency:'COP':'symbol':'1.0-0' }}</span>
+                <span class="stat-mini-lbl">Ingresos</span>
+              </div>
+            </ion-col>
+            <ion-col>
+              <div class="stat-mini">
+                <ion-icon name="trending-down-outline" color="danger"></ion-icon>
+                <span class="stat-mini-val">{{ currentTotalGastado | currency:'COP':'symbol':'1.0-0' }}</span>
+                <span class="stat-mini-lbl">Gastos + Agenda</span>
+              </div>
+            </ion-col>
+          </ion-row>
+          <ion-row *ngIf="comparison.current.agendaTotalPaid > 0">
+            <ion-col>
+              <div class="breakdown-row">
+                <span>Gastos regulares:</span>
+                <span>{{ comparison.current.expenses | currency:'COP':'symbol':'1.0-0' }}</span>
+              </div>
+              <div class="breakdown-row">
+                <span>Agenda pagada:</span>
+                <span>{{ comparison.current.agendaTotalPaid | currency:'COP':'symbol':'1.0-0' }}</span>
+              </div>
+            </ion-col>
+          </ion-row>
+        </ion-grid>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Comparativa chart -->
     <ion-card *ngIf="comparison">
       <ion-card-header>
-        <ion-card-subtitle>Comparativa de gastos</ion-card-subtitle>
+        <ion-card-subtitle>Comparativa de gastos totales</ion-card-subtitle>
       </ion-card-header>
       <ion-card-content>
         <canvas #barCanvas style="max-height: 220px;"></canvas>
@@ -45,20 +87,20 @@
     </ion-card>
 
     <ion-card *ngIf="comparison as c">
-      <ion-card-header><ion-card-subtitle>Variaciones</ion-card-subtitle></ion-card-header>
+      <ion-card-header><ion-card-subtitle>Variaciones vs gastos totales</ion-card-subtitle></ion-card-header>
       <ion-card-content>
         <ion-grid>
           <ion-row>
             <ion-col size="6" class="ion-text-center">
               <p class="stat-lbl">vs Mes anterior</p>
-              <ion-badge [color]="diffColor(c.current.expenses, c.previousMonth.expenses)">
-                {{ diffPercent(c.current.expenses, c.previousMonth.expenses) }}
+              <ion-badge [color]="diffColor(c.current.totalGastado, c.previousMonth.totalGastado)">
+                {{ diffPercent(c.current.totalGastado, c.previousMonth.totalGastado) }}
               </ion-badge>
             </ion-col>
             <ion-col size="6" class="ion-text-center">
               <p class="stat-lbl">vs Año anterior</p>
-              <ion-badge [color]="diffColor(c.current.expenses, c.sameMonthLastYear.expenses)">
-                {{ diffPercent(c.current.expenses, c.sameMonthLastYear.expenses) }}
+              <ion-badge [color]="diffColor(c.current.totalGastado, c.sameMonthLastYear.totalGastado)">
+                {{ diffPercent(c.current.totalGastado, c.sameMonthLastYear.totalGastado) }}
               </ion-badge>
             </ion-col>
           </ion-row>
@@ -67,7 +109,7 @@
     </ion-card>
 
     <ion-card *ngIf="summary?.byCategory?.length">
-      <ion-card-header><ion-card-subtitle>Por categoría</ion-card-subtitle></ion-card-header>
+      <ion-card-header><ion-card-subtitle>Gastos por categoría</ion-card-subtitle></ion-card-header>
       <ion-card-content>
         <ion-item *ngFor="let cat of summary!.byCategory" lines="none">
           <ion-label>{{ cat.category.name }}</ion-label>

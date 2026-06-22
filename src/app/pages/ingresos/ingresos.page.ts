@@ -10,6 +10,7 @@ import { Income, Category, MONTH_NAMES } from '../../core/models';
 @Component({
   selector: 'app-ingresos',
   templateUrl: './ingresos.page.html',
+  styleUrls: ['./ingresos.page.scss'],
   standalone: false,
 })
 export class IngresosPage implements OnInit {
@@ -62,12 +63,22 @@ export class IngresosPage implements OnInit {
   ngOnInit() { this.buildForm(); this.loadData(); }
   ionViewWillEnter() { this.loadData(); }
 
+  get bankBalance(): { bank: string; total: number }[] {
+    const map = new Map<string, number>();
+    for (const i of this.incomes) {
+      const b = i.bank?.trim() || 'Sin banco';
+      map.set(b, (map.get(b) ?? 0) + i.amount);
+    }
+    return Array.from(map.entries()).map(([bank, total]) => ({ bank, total })).sort((a, b) => b.total - a.total);
+  }
+
   buildForm() {
     this.form = this.fb.group({
       description: ['', Validators.required],
       amount: [null, [Validators.required, Validators.min(0.01)]],
       categoryId: ['', Validators.required],
       date: [this.todayLocal(), Validators.required],
+      bank: [''],
       notes: [''],
     });
   }
@@ -123,6 +134,7 @@ export class IngresosPage implements OnInit {
       amount: income.amount,
       categoryId: (income.categoryId as any)?._id || income.categoryId,
       date: (income.date as string)?.substring(0, 10),
+      bank: income.bank || '',
       notes: income.notes || '',
     });
     this.showModal = true;

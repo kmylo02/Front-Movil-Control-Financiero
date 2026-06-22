@@ -14,7 +14,7 @@ export interface Expense {
 }
 export interface Income {
   _id: string; amount: number; description: string; date: string;
-  categoryId: Category | string; isRecurring: boolean; notes: string; createdAt: string;
+  categoryId: Category | string; isRecurring: boolean; bank: string; notes: string; createdAt: string;
 }
 export interface Recurring {
   _id: string; name: string; amount: number; categoryId: Category | string;
@@ -32,7 +32,8 @@ export interface BudgetSummary {
   categoryBreakdown: { categoryId: Category; limit: number; spent: number; remaining: number; usagePercent: number }[];
 }
 export interface MonthlySummary {
-  year: number; month: number; totalExpenses: number; totalIncomes: number; balance: number;
+  year: number; month: number; totalExpenses: number; agendaTotalPaid: number; totalGastado: number;
+  totalIncomes: number; balance: number;
   byCategory: { category: Category; total: number; count: number }[];
   budget: BudgetSummary;
 }
@@ -42,9 +43,9 @@ export interface YearlySummary {
   balance: number; averageMonthlyExpense: number; averageMonthlyIncome: number;
 }
 export interface MonthComparison {
-  current: { year: number; month: number; expenses: number; incomes: number; balance: number };
-  previousMonth: { year: number; month: number; expenses: number; incomes: number };
-  sameMonthLastYear: { year: number; month: number; expenses: number; incomes: number };
+  current: { year: number; month: number; expenses: number; agendaTotalPaid: number; totalGastado: number; incomes: number; balance: number };
+  previousMonth: { year: number; month: number; expenses: number; agendaTotalPaid: number; totalGastado: number; incomes: number };
+  sameMonthLastYear: { year: number; month: number; expenses: number; agendaTotalPaid: number; totalGastado: number; incomes: number };
   changes: { expensesVsPreviousMonth: number | null; expensesVsLastYear: number | null };
 }
 export interface Notification {

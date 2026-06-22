@@ -25,7 +25,7 @@
     </ion-button>
   </div>
 
-  <!-- Resumen total -->
+  <!-- Total + balance por banco -->
   <div class="ion-padding-horizontal ion-padding-bottom">
     <ion-chip color="success" outline>
       <ion-icon name="trending-up-outline"></ion-icon>
@@ -33,15 +33,22 @@
     </ion-chip>
   </div>
 
+  <!-- Balance por banco -->
+  <div *ngIf="bankBalance.length > 0" class="bank-row ion-padding-horizontal ion-padding-bottom">
+    <div *ngFor="let b of bankBalance" class="bank-chip-card">
+      <span class="bank-icon">🏦</span>
+      <div class="bank-detail">
+        <span class="bank-name">{{ b.bank }}</span>
+        <span class="bank-amt">{{ b.total | currency:'COP':'symbol':'1.0-0' }}</span>
+      </div>
+    </div>
+  </div>
+
   <!-- Barra búsqueda y orden -->
   <div class="filter-bar ion-padding-horizontal ion-padding-bottom">
     <div class="search-wrap">
       <ion-icon name="search-outline" class="search-icon"></ion-icon>
-      <input
-        class="search-input"
-        placeholder="Buscar descripción…"
-        [(ngModel)]="searchText"
-      />
+      <input class="search-input" placeholder="Buscar descripción…" [(ngModel)]="searchText" />
       <ion-icon *ngIf="searchText" name="close-circle-outline" class="clear-icon" (click)="searchText=''"></ion-icon>
     </div>
     <select class="sort-select" [(ngModel)]="sortBy">
@@ -62,7 +69,11 @@
         <ion-icon slot="start" name="cash-outline" color="success"></ion-icon>
         <ion-label>
           <h3>{{ income.description }}</h3>
-          <p>{{ getCategoryName(income.categoryId) }} · {{ income.date | date:'dd/MM/yyyy':'UTC' }}</p>
+          <p>
+            {{ getCategoryName(income.categoryId) }}
+            <span *ngIf="income.bank"> · 🏦 {{ income.bank }}</span>
+            · {{ income.date | date:'dd/MM/yyyy':'UTC' }}
+          </p>
         </ion-label>
         <ion-note slot="end" color="success">
           {{ income.amount | currency:'COP':'symbol':'1.0-0' }}
@@ -129,6 +140,10 @@
           <ion-item>
             <ion-label position="stacked">Fecha *</ion-label>
             <ion-input type="date" formControlName="date"></ion-input>
+          </ion-item>
+          <ion-item>
+            <ion-label position="stacked">Banco / Cuenta</ion-label>
+            <ion-input formControlName="bank" placeholder="Ej: Bancolombia, Nequi, Daviplata…"></ion-input>
           </ion-item>
           <ion-item>
             <ion-label position="stacked">Notas</ion-label>
