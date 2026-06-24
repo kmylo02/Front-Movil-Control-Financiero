@@ -143,7 +143,10 @@
           </ion-item>
           <ion-item>
             <ion-label position="stacked">Banco / Cuenta</ion-label>
-            <ion-input formControlName="bank" placeholder="Ej: Bancolombia, Nequi, Daviplata…"></ion-input>
+            <ion-select formControlName="bank" placeholder="Selecciona banco" interface="action-sheet">
+              <ion-select-option value="">Sin banco</ion-select-option>
+              <ion-select-option *ngFor="let b of banks" [value]="b">{{ b }}</ion-select-option>
+            </ion-select>
           </ion-item>
           <ion-item>
             <ion-label position="stacked">Notas</ion-label>

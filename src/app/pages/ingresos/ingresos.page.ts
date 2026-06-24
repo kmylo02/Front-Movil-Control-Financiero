@@ -5,7 +5,7 @@ import { Router } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { IncomesService } from '../../core/services/incomes.service';
 import { CategoriesService } from '../../core/services/categories.service';
-import { Income, Category, MONTH_NAMES } from '../../core/models';
+import { Income, Category, MONTH_NAMES, COLOMBIAN_BANKS } from '../../core/models';
 
 @Component({
   selector: 'app-ingresos',
@@ -23,6 +23,7 @@ export class IngresosPage implements OnInit {
 
   searchText = '';
   sortBy: 'date-desc' | 'date-asc' | 'amount-desc' | 'amount-asc' = 'date-desc';
+  readonly banks = COLOMBIAN_BANKS;
 
   today = new Date();
   year = this.today.getFullYear();
@@ -146,9 +147,15 @@ export class IngresosPage implements OnInit {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     const loading = await this.loadingCtrl.create({ message: 'Guardando...' });
     await loading.present();
+    const payload = {
+      ...this.form.value,
+      amount: +this.form.value.amount,
+      notes: this.form.value.notes ?? '',
+      bank: this.form.value.bank ?? '',
+    };
     const req = this.editingId
-      ? this.incomesService.update(this.editingId, this.form.value)
-      : this.incomesService.create(this.form.value);
+      ? this.incomesService.update(this.editingId, payload)
+      : this.incomesService.create(payload);
     req.subscribe({
       next: async () => {
         await loading.dismiss();

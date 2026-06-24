@@ -63,3 +63,10 @@ export const MONTH_NAMES = [
   'Enero','Febrero','Marzo','Abril','Mayo','Junio',
   'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'
 ];
+
+export const COLOMBIAN_BANKS = [
+  'Bancolombia', 'Banco de Bogotá', 'Davivienda', 'BBVA Colombia',
+  'Banco Popular', 'Banco de Occidente', 'Scotiabank Colpatria',
+  'Banco Caja Social', 'Nequi', 'Daviplata', 'Lulo Bank', 'Nu Colombia',
+  'Pibank', 'Movii', 'Rappipay', 'Efectivo / Otro',
+];
