@@ -3,7 +3,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { AlertController, LoadingController, ToastController } from '@ionic/angular';
 import { Router } from '@angular/router';
 import { forkJoin, of } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { catchError, timeout, finalize } from 'rxjs/operators';
 import { ExpensesService } from '../../core/services/expenses.service';
 import { CategoriesService } from '../../core/services/categories.service';
 import { Expense, Category, MONTH_NAMES } from '../../core/models';
@@ -82,15 +82,15 @@ export class GastosPage implements OnInit {
   loadData() {
     this.isLoading = true;
     forkJoin({
-      expenses:   this.expensesService.getAll(this.year, this.month).pipe(catchError(() => of([]))),
-      categories: this.categoriesService.getAll('expense').pipe(catchError(() => of([]))),
-    }).subscribe({
+      expenses:   this.expensesService.getAll(this.year, this.month).pipe(timeout(15000), catchError(() => of([]))),
+      categories: this.categoriesService.getAll('expense').pipe(timeout(15000), catchError(() => of([]))),
+    }).pipe(
+      finalize(() => { this.isLoading = false; }),
+    ).subscribe({
       next: ({ expenses, categories }) => {
         this.expenses   = expenses as Expense[];
         this.categories = categories as Category[];
-        this.isLoading  = false;
       },
-      error: () => { this.isLoading = false; },
     });
   }
 

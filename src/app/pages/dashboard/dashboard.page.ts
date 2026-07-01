@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { Router } from '@angular/router';
 import { forkJoin, of } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { catchError, timeout, finalize } from 'rxjs/operators';
 import { Chart, registerables } from 'chart.js';
 import { AuthService } from '../../core/services/auth.service';
 import { ReportsService } from '../../core/services/reports.service';
@@ -90,18 +90,18 @@ export class DashboardPage implements OnInit, OnDestroy {
   loadData() {
     this.isLoading = true;
     forkJoin({
-      summary:     this.reports.getMonthly(this.year, this.month).pipe(catchError(() => of(null))),
-      prevSummary: this.reports.getMonthly(this.prevMonthYear, this.prevMonthNum).pipe(catchError(() => of(null))),
-      bills:       this.billItemsService.getByMonth(this.year, this.month).pipe(catchError(() => of([]))),
-    }).subscribe({
+      summary:     this.reports.getMonthly(this.year, this.month).pipe(timeout(15000), catchError(() => of(null))),
+      prevSummary: this.reports.getMonthly(this.prevMonthYear, this.prevMonthNum).pipe(timeout(15000), catchError(() => of(null))),
+      bills:       this.billItemsService.getByMonth(this.year, this.month).pipe(timeout(15000), catchError(() => of([]))),
+    }).pipe(
+      finalize(() => { this.isLoading = false; }),
+    ).subscribe({
       next: ({ summary, prevSummary, bills }) => {
         this.summary     = summary as MonthlySummary | null;
         this.prevSummary = prevSummary as MonthlySummary | null;
         this.agendaBills = bills as BillItem[];
-        this.isLoading   = false;
         setTimeout(() => this.renderDonut(), 100);
       },
-      error: () => { this.isLoading = false; },
     });
   }
 

@@ -2,12 +2,11 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { AlertController, LoadingController, ToastController } from '@ionic/angular';
 import { Router } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { forkJoin, of } from 'rxjs';
+import { catchError, timeout, finalize } from 'rxjs/operators';
 import { IncomesService } from '../../core/services/incomes.service';
 import { CategoriesService } from '../../core/services/categories.service';
 import { Income, Category, MONTH_NAMES, COLOMBIAN_BANKS } from '../../core/models';
-import { catchError } from 'rxjs/operators';
-import { of } from 'rxjs';
 
 @Component({
   selector: 'app-ingresos',
@@ -94,15 +93,15 @@ export class IngresosPage implements OnInit {
   loadData() {
     this.isLoading = true;
     forkJoin({
-      incomes:    this.incomesService.getAll(this.year, this.month).pipe(catchError(() => of([]))),
-      categories: this.categoriesService.getAll('income').pipe(catchError(() => of([]))),
-    }).subscribe({
+      incomes:    this.incomesService.getAll(this.year, this.month).pipe(timeout(15000), catchError(() => of([]))),
+      categories: this.categoriesService.getAll('income').pipe(timeout(15000), catchError(() => of([]))),
+    }).pipe(
+      finalize(() => { this.isLoading = false; }),
+    ).subscribe({
       next: ({ incomes, categories }) => {
         this.incomes    = incomes as Income[];
         this.categories = categories as Category[];
-        this.isLoading  = false;
       },
-      error: () => { this.isLoading = false; },
     });
   }
 
