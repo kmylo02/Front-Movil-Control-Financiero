@@ -41,9 +41,9 @@ export class LoginPage implements OnInit {
     await loading.present();
     const { email, password } = this.form.value;
     this.auth.login(email, password).subscribe({
-      next: async (res) => {
+      next: async () => {
         await loading.dismiss();
-        await this.offerBiometric(email, res.access_token);
+        await this.offerBiometric(email, password);
         this.router.navigateByUrl('/tabs/dashboard', { replaceUrl: true });
       },
       error: async (err) => {
@@ -59,49 +59,53 @@ export class LoginPage implements OnInit {
   }
 
   async loginWithBiometric() {
+    const loading = await this.loadingCtrl.create({ message: 'Verificando...' });
     try {
-      const { token } = await this.biometric.verify();
-      const raw = localStorage.getItem('user');
-      const user = raw ? JSON.parse(raw) : null;
-      if (user) {
-        this.auth.restoreSession(token, user);
-        this.router.navigateByUrl('/tabs/dashboard', { replaceUrl: true });
-      } else {
-        await this.showBiometricError();
-      }
+      const { email, password } = await this.biometric.verify();
+      await loading.present();
+      this.auth.login(email, password).subscribe({
+        next: async () => {
+          await loading.dismiss();
+          this.router.navigateByUrl('/tabs/dashboard', { replaceUrl: true });
+        },
+        error: async () => {
+          await loading.dismiss();
+          await this.biometric.deleteCredentials();
+          this.showBiometric = false;
+          const alert = await this.alertCtrl.create({
+            header: 'Sesión expirada',
+            message: 'Tu contraseña cambió o hay un problema. Ingresa con tu contraseña para reactivar la huella.',
+            buttons: ['OK'],
+          });
+          await alert.present();
+        },
+      });
     } catch {
-      await this.showBiometricError();
+      await loading.dismiss();
     }
   }
 
-  private async offerBiometric(email: string, token: string): Promise<void> {
+  private async offerBiometric(email: string, password: string): Promise<void> {
     const available = await this.biometric.isAvailable();
     if (!available) return;
+
+    const alreadyStored = await this.biometric.hasStoredCredentials();
+    if (alreadyStored) {
+      // Actualiza las credenciales guardadas sin molestar al usuario
+      this.biometric.saveCredentials(email, password).catch(() => {});
+      return;
+    }
+
     const alert = await this.alertCtrl.create({
       header: '¿Habilitar huella?',
-      message: 'Activa el acceso con huella dactilar para ingresar más rápido la próxima vez.',
+      message: 'Activa el acceso con huella dactilar para ingresar más rápido.',
       buttons: [
         { text: 'Ahora no', role: 'cancel' },
-        {
-          text: 'Activar',
-          handler: () => {
-            this.biometric.saveCredentials(email, token)
-              .catch(() => {});
-          },
-        },
+        { text: 'Activar', handler: () => { this.biometric.saveCredentials(email, password).catch(() => {}); } },
       ],
     });
     await alert.present();
     await alert.onDidDismiss();
-  }
-
-  private async showBiometricError(): Promise<void> {
-    const alert = await this.alertCtrl.create({
-      header: 'Error',
-      message: 'No se pudo verificar tu identidad. Usa tu contraseña.',
-      buttons: ['OK'],
-    });
-    await alert.present();
   }
 
   goRegister() { this.router.navigateByUrl('/auth/register'); }

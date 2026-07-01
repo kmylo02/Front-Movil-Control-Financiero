@@ -24,15 +24,15 @@ export class BiometricService {
     }
   }
 
-  async saveCredentials(email: string, token: string): Promise<void> {
+  async saveCredentials(email: string, password: string): Promise<void> {
     await NativeBiometric.setCredentials({
       username: email,
-      password: token,
+      password: password,
       server: SERVER,
     });
   }
 
-  async verify(): Promise<{ email: string; token: string }> {
+  async verify(): Promise<{ email: string; password: string }> {
     await NativeBiometric.verifyIdentity({
       reason: 'Verifica tu identidad para acceder',
       title: 'Control Financiero',
@@ -43,7 +43,7 @@ export class BiometricService {
       negativeButtonText: 'Cancelar',
     });
     const creds = await NativeBiometric.getCredentials({ server: SERVER });
-    return { email: creds.username, token: creds.password };
+    return { email: creds.username, password: creds.password };
   }
 
   async deleteCredentials(): Promise<void> {
