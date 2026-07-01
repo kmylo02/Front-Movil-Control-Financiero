@@ -36,7 +36,7 @@ export class AuthService {
   logout(): void {
     localStorage.removeItem('access_token');
     localStorage.removeItem('user');
-    this.biometric.deleteCredentials();
+    // NO borrar credenciales biométricas para que el usuario pueda reingesar con huella
     this.userSubject.next(null);
     this.router.navigate(['/auth/login']);
   }

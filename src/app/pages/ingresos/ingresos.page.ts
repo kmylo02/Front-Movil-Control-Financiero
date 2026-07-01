@@ -6,6 +6,8 @@ import { forkJoin } from 'rxjs';
 import { IncomesService } from '../../core/services/incomes.service';
 import { CategoriesService } from '../../core/services/categories.service';
 import { Income, Category, MONTH_NAMES, COLOMBIAN_BANKS } from '../../core/models';
+import { catchError } from 'rxjs/operators';
+import { of } from 'rxjs';
 
 @Component({
   selector: 'app-ingresos',
@@ -61,7 +63,7 @@ export class IngresosPage implements OnInit {
     private router: Router,
   ) {}
 
-  ngOnInit() { this.buildForm(); this.loadData(); }
+  ngOnInit() { this.buildForm(); }
   ionViewWillEnter() { this.loadData(); }
 
   get bankBalance(): { bank: string; total: number }[] {
@@ -92,13 +94,13 @@ export class IngresosPage implements OnInit {
   loadData() {
     this.isLoading = true;
     forkJoin({
-      incomes: this.incomesService.getAll(this.year, this.month),
-      categories: this.categoriesService.getAll('income'),
+      incomes:    this.incomesService.getAll(this.year, this.month).pipe(catchError(() => of([]))),
+      categories: this.categoriesService.getAll('income').pipe(catchError(() => of([]))),
     }).subscribe({
       next: ({ incomes, categories }) => {
-        this.incomes = incomes;
-        this.categories = categories;
-        this.isLoading = false;
+        this.incomes    = incomes as Income[];
+        this.categories = categories as Category[];
+        this.isLoading  = false;
       },
       error: () => { this.isLoading = false; },
     });

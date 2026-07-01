@@ -2,7 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { AlertController, LoadingController, ToastController } from '@ionic/angular';
 import { Router } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { ExpensesService } from '../../core/services/expenses.service';
 import { CategoriesService } from '../../core/services/categories.service';
 import { Expense, Category, MONTH_NAMES } from '../../core/models';
@@ -60,7 +61,7 @@ export class GastosPage implements OnInit {
     private router: Router,
   ) {}
 
-  ngOnInit() { this.buildForm(); this.loadData(); }
+  ngOnInit() { this.buildForm(); }
   ionViewWillEnter() { this.loadData(); }
 
   buildForm() {
@@ -81,13 +82,13 @@ export class GastosPage implements OnInit {
   loadData() {
     this.isLoading = true;
     forkJoin({
-      expenses: this.expensesService.getAll(this.year, this.month),
-      categories: this.categoriesService.getAll('expense'),
+      expenses:   this.expensesService.getAll(this.year, this.month).pipe(catchError(() => of([]))),
+      categories: this.categoriesService.getAll('expense').pipe(catchError(() => of([]))),
     }).subscribe({
       next: ({ expenses, categories }) => {
-        this.expenses = expenses;
-        this.categories = categories;
-        this.isLoading = false;
+        this.expenses   = expenses as Expense[];
+        this.categories = categories as Category[];
+        this.isLoading  = false;
       },
       error: () => { this.isLoading = false; },
     });
