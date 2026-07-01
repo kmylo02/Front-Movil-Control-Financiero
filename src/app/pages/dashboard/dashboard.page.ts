@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { Router } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { Chart, registerables } from 'chart.js';
 import { AuthService } from '../../core/services/auth.service';
 import { ReportsService } from '../../core/services/reports.service';
@@ -29,9 +30,15 @@ export class DashboardPage implements OnInit, OnDestroy {
   todayDay  = this.today.getDate();
 
   summary:     MonthlySummary | null = null;
+  prevSummary: MonthlySummary | null = null;
   agendaBills: BillItem[] = [];
   isLoading = true;
   private donutChart?: Chart;
+
+  get prevMonthYear() { return this.month === 1 ? this.year - 1 : this.year; }
+  get prevMonthNum()  { return this.month === 1 ? 12 : this.month - 1; }
+  get prevMonthName() { return MONTH_NAMES[this.prevMonthNum - 1]; }
+  get isCurrentMonth() { return this.year === this.today.getFullYear() && this.month === this.today.getMonth() + 1; }
 
   get agendaPending()      { return this.agendaBills.filter(b => b.status === 'pending'); }
   get agendaPaid()         { return this.agendaBills.filter(b => b.status === 'paid'); }
@@ -50,36 +57,47 @@ export class DashboardPage implements OnInit, OnDestroy {
   billCatColor(b: BillItem) { return typeof b.categoryId === 'object' ? (b.categoryId as any).color : '#6366f1'; }
   billCatName(b: BillItem)  { return typeof b.categoryId === 'object' ? (b.categoryId as any).name  : ''; }
 
-  // ── Balance combinado (gastos regulares + agenda pagada) ───────
-  get totalGastado()       { return (this.summary?.totalExpenses ?? 0) + this.agendaTotalPaid; }
-  get balance()            { return (this.summary?.totalIncomes ?? 0) - this.totalGastado; }
-  get balanceProyectado()  { return this.balance - this.agendaTotalPending; }
+  get totalGastado()      { return (this.summary?.totalExpenses ?? 0) + this.agendaTotalPaid; }
+  get balance()           { return (this.summary?.totalIncomes ?? 0) - this.totalGastado; }
+  get balanceProyectado() { return this.balance - this.agendaTotalPending; }
+  get prevMonthBalance()  { return this.prevSummary?.balance ?? 0; }
+  get totalDisponible()   { return this.prevMonthBalance + this.balance; }
 
   get budgetPercent() { return this.summary?.budget?.usagePercent ?? 0; }
   get budgetTotal()   { return this.summary?.budget?.budget?.totalLimit ?? 0; }
   get budgetColor()   { const p = this.budgetPercent; return p >= 100 ? 'danger' : p >= 80 ? 'warning' : 'success'; }
 
   constructor(
-    private auth:          AuthService,
-    private reports:       ReportsService,
+    private auth:             AuthService,
+    private reports:          ReportsService,
     private billItemsService: BillItemsService,
-    private notifications: NotificationsService,
-    private router:        Router,
+    private notifications:    NotificationsService,
+    private router:           Router,
   ) {}
 
   ngOnInit()         { this.loadData(); }
   ngOnDestroy()      { this.donutChart?.destroy(); }
   ionViewWillEnter() { this.notifications.getUnreadCount().subscribe(); }
 
+  changeMonth(dir: number) {
+    this.month += dir;
+    if (this.month > 12) { this.month = 1; this.year++; }
+    if (this.month < 1)  { this.month = 12; this.year--; }
+    this.monthName = MONTH_NAMES[this.month - 1];
+    this.loadData();
+  }
+
   loadData() {
     this.isLoading = true;
     forkJoin({
-      summary: this.reports.getMonthly(this.year, this.month),
-      bills:   this.billItemsService.getByMonth(this.year, this.month),
+      summary:     this.reports.getMonthly(this.year, this.month).pipe(catchError(() => of(null))),
+      prevSummary: this.reports.getMonthly(this.prevMonthYear, this.prevMonthNum).pipe(catchError(() => of(null))),
+      bills:       this.billItemsService.getByMonth(this.year, this.month).pipe(catchError(() => of([]))),
     }).subscribe({
-      next: ({ summary, bills }) => {
-        this.summary     = summary;
-        this.agendaBills = bills;
+      next: ({ summary, prevSummary, bills }) => {
+        this.summary     = summary as MonthlySummary | null;
+        this.prevSummary = prevSummary as MonthlySummary | null;
+        this.agendaBills = bills as BillItem[];
         this.isLoading   = false;
         setTimeout(() => this.renderDonut(), 100);
       },

@@ -2,7 +2,11 @@
   <ion-toolbar class="header-toolbar">
     <div slot="start" class="header-greeting" *ngIf="user$ | async as user">
       <span class="greeting-text">Hola, {{ user.name.split(' ')[0] }}</span>
-      <span class="greeting-sub">{{ monthName }} {{ year }}</span>
+      <div class="month-nav-inline">
+        <button class="month-nav-btn" (click)="changeMonth(-1)">‹</button>
+        <span class="greeting-sub">{{ monthName }} {{ year }}</span>
+        <button class="month-nav-btn" (click)="changeMonth(1)" [disabled]="isCurrentMonth">›</button>
+      </div>
     </div>
     <ion-buttons slot="end">
       <ion-button (click)="logout()" fill="clear" color="medium">
@@ -67,6 +71,23 @@
         Pendiente agenda: {{ agendaTotalPending | currency:'COP':'symbol':'1.0-0' }}
         &nbsp;→&nbsp;
         <strong>Proyectado: {{ balanceProyectado | currency:'COP':'symbol':'1.0-0' }}</strong>
+      </div>
+
+      <!-- Saldo arrastrado del mes anterior -->
+      <div class="hero-carryover" *ngIf="prevSummary">
+        <div class="carryover-row">
+          <ion-icon name="return-down-forward-outline"></ion-icon>
+          <span>Saldo {{ prevMonthName }}:</span>
+          <span class="carry-amount" [class.carry-pos]="prevMonthBalance >= 0" [class.carry-neg]="prevMonthBalance < 0">
+            {{ prevMonthBalance | currency:'COP':'symbol':'1.0-0' }}
+          </span>
+        </div>
+        <div class="carryover-total">
+          Total acumulado:
+          <strong [class.carry-pos]="totalDisponible >= 0" [class.carry-neg]="totalDisponible < 0">
+            {{ totalDisponible | currency:'COP':'symbol':'1.0-0' }}
+          </strong>
+        </div>
       </div>
     </div>
 
