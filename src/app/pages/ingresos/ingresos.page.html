@@ -143,14 +143,14 @@
           </ion-item>
           <ion-item>
             <ion-label position="stacked">Banco / Cuenta</ion-label>
-            <ion-select formControlName="bank" placeholder="Selecciona banco" interface="action-sheet">
+            <ion-select formControlName="bank" placeholder="Selecciona banco">
               <ion-select-option value="">Sin banco</ion-select-option>
               <ion-select-option *ngFor="let b of banks" [value]="b">{{ b }}</ion-select-option>
             </ion-select>
           </ion-item>
           <ion-item>
             <ion-label position="stacked">Notas</ion-label>
-            <ion-textarea formControlName="notes" rows="2" placeholder="Opcional"></ion-textarea>
+            <ion-input formControlName="notes" placeholder="Opcional"></ion-input>
           </ion-item>
         </ion-list>
         <ion-button expand="block" type="submit" color="success" class="ion-margin-top" [disabled]="form.invalid">

@@ -59,30 +59,43 @@ export class LoginPage implements OnInit {
   }
 
   async loginWithBiometric() {
-    const loading = await this.loadingCtrl.create({ message: 'Verificando...' });
+    let loading: any = null;
     try {
+      // 1. Verificar huella ANTES de mostrar loading
       const { email, password } = await this.biometric.verify();
+
+      // 2. Huella ok → mostrar loading y hacer login real
+      loading = await this.loadingCtrl.create({ message: 'Iniciando sesión...' });
       await loading.present();
+
       this.auth.login(email, password).subscribe({
         next: async () => {
-          await loading.dismiss();
+          await loading?.dismiss();
           this.router.navigateByUrl('/tabs/dashboard', { replaceUrl: true });
         },
         error: async () => {
-          await loading.dismiss();
+          await loading?.dismiss();
+          // Limpiar credenciales viejas ANTES de mostrar el alert
           await this.biometric.deleteCredentials();
           this.showBiometric = false;
           const alert = await this.alertCtrl.create({
-            header: 'Sesión expirada',
-            message: 'Tu contraseña cambió o hay un problema. Ingresa con tu contraseña para reactivar la huella.',
+            header: '¿Cambió tu contraseña?',
+            message: 'Las credenciales guardadas ya no son válidas. Inicia sesión con tu contraseña para reactivar la huella.',
             buttons: ['OK'],
           });
           await alert.present();
         },
       });
     } catch {
-      await loading.dismiss();
+      // Usuario canceló la huella o el dispositivo falló — no hacer nada
+      await loading?.dismiss();
     }
+  }
+
+  async ionViewWillEnter() {
+    const available = await this.biometric.isAvailable();
+    const hasStored = available ? await this.biometric.hasStoredCredentials() : false;
+    this.showBiometric = available && hasStored;
   }
 
   private async offerBiometric(email: string, password: string): Promise<void> {

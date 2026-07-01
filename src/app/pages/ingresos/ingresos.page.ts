@@ -163,7 +163,11 @@ export class IngresosPage implements OnInit {
         this.loadData();
         this.showToast(this.editingId ? 'Ingreso actualizado' : 'Ingreso agregado');
       },
-      error: async () => { await loading.dismiss(); this.showToast('Error al guardar', 'danger'); },
+      error: async (err) => {
+        await loading.dismiss();
+        const msg = err?.error?.message || err?.message || 'Error al guardar';
+        this.showToast(Array.isArray(msg) ? msg.join(', ') : msg, 'danger');
+      },
     });
   }
 

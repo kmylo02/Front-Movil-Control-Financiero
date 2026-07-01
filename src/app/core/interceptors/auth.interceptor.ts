@@ -15,7 +15,9 @@ export class AuthInterceptor implements HttpInterceptor {
     }
     return next.handle(request).pipe(
       catchError((err: HttpErrorResponse) => {
-        if (err.status === 401) {
+        // No redirigir si es un endpoint de auth (login/register) — el caller maneja el error
+        const isAuthEndpoint = request.url.includes('/auth/login') || request.url.includes('/auth/register');
+        if (err.status === 401 && !isAuthEndpoint) {
           localStorage.removeItem('access_token');
           localStorage.removeItem('user');
           this.router.navigate(['/auth/login']);
