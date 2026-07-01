@@ -31,6 +31,11 @@ export class IngresosPage implements OnInit {
   month = this.today.getMonth() + 1;
   monthName = MONTH_NAMES[this.month - 1];
 
+  bankBalance: { bank: string; total: number }[] = [];
+
+  trackById(_: number, item: { _id: string })                  { return item._id; }
+  trackByBank(_: number, item: { bank: string; total: number }) { return item.bank; }
+
   get filtered(): Income[] {
     let list = this.searchText.trim()
       ? this.incomes.filter(i => i.description.toLowerCase().includes(this.searchText.toLowerCase()))
@@ -65,13 +70,15 @@ export class IngresosPage implements OnInit {
   ngOnInit() { this.buildForm(); }
   ionViewWillEnter() { this.loadData(); }
 
-  get bankBalance(): { bank: string; total: number }[] {
+  private computeBankBalance() {
     const map = new Map<string, number>();
     for (const i of this.incomes) {
       const b = i.bank?.trim() || 'Sin banco';
       map.set(b, (map.get(b) ?? 0) + i.amount);
     }
-    return Array.from(map.entries()).map(([bank, total]) => ({ bank, total })).sort((a, b) => b.total - a.total);
+    this.bankBalance = Array.from(map.entries())
+      .map(([bank, total]) => ({ bank, total }))
+      .sort((a, b) => b.total - a.total);
   }
 
   buildForm() {
@@ -101,6 +108,7 @@ export class IngresosPage implements OnInit {
       next: ({ incomes, categories }) => {
         this.incomes    = incomes as Income[];
         this.categories = categories as Category[];
+        this.computeBankBalance();
       },
     });
   }

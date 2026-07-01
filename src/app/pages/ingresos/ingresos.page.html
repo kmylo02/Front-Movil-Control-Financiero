@@ -35,7 +35,7 @@
 
   <!-- Balance por banco -->
   <div *ngIf="bankBalance.length > 0" class="bank-row ion-padding-horizontal ion-padding-bottom">
-    <div *ngFor="let b of bankBalance" class="bank-chip-card">
+    <div *ngFor="let b of bankBalance; trackBy: trackByBank" class="bank-chip-card">
       <span class="bank-icon">🏦</span>
       <div class="bank-detail">
         <span class="bank-name">{{ b.bank }}</span>
@@ -64,7 +64,7 @@
   </div>
 
   <ion-list *ngIf="!isLoading">
-    <ion-item-sliding *ngFor="let income of filtered">
+    <ion-item-sliding *ngFor="let income of filtered; trackBy: trackById">
       <ion-item>
         <ion-icon slot="start" name="cash-outline" color="success"></ion-icon>
         <ion-label>
@@ -128,7 +128,7 @@
           <ion-item>
             <ion-label position="stacked">Categoría *</ion-label>
             <ion-select formControlName="categoryId" placeholder="Selecciona">
-              <ion-select-option *ngFor="let cat of categories" [value]="cat._id">{{ cat.name }}</ion-select-option>
+              <ion-select-option *ngFor="let cat of categories; trackBy: trackById" [value]="cat._id">{{ cat.name }}</ion-select-option>
             </ion-select>
           </ion-item>
           <ion-item lines="none">
