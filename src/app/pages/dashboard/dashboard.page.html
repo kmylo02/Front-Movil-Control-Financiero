@@ -29,9 +29,9 @@
   <ng-container *ngIf="!isLoading && summary as s">
 
     <!-- ─── Hero balance ─── -->
-    <div class="hero-card" [class.hero-negative]="balance < 0">
-      <div class="hero-label">Disponible este mes</div>
-      <div class="hero-balance">{{ balance | currency:'COP':'symbol':'1.0-0' }}</div>
+    <div class="hero-card" [class.hero-negative]="totalDisponible < 0">
+      <div class="hero-label">{{ prevSummary ? 'Total disponible' : 'Disponible este mes' }}</div>
+      <div class="hero-balance">{{ totalDisponible | currency:'COP':'symbol':'1.0-0' }}</div>
 
       <!-- Ingresos / Gastado total -->
       <div class="hero-row">
@@ -82,11 +82,12 @@
             {{ prevMonthBalance | currency:'COP':'symbol':'1.0-0' }}
           </span>
         </div>
-        <div class="carryover-total">
-          Total acumulado:
-          <strong [class.carry-pos]="totalDisponible >= 0" [class.carry-neg]="totalDisponible < 0">
-            {{ totalDisponible | currency:'COP':'symbol':'1.0-0' }}
-          </strong>
+        <div class="carryover-row">
+          <ion-icon name="add-outline"></ion-icon>
+          <span>{{ monthName }} (este mes):</span>
+          <span class="carry-amount" [class.carry-pos]="balance >= 0" [class.carry-neg]="balance < 0">
+            {{ balance | currency:'COP':'symbol':'1.0-0' }}
+          </span>
         </div>
       </div>
     </div>
