@@ -1,7 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { AlertController, ToastController } from '@ionic/angular';
-import { forkJoin } from 'rxjs';
+import { forkJoin, of } from 'rxjs';
+import { catchError, timeout, finalize } from 'rxjs/operators';
 import { BillItemsService } from '../../core/services/bill-items.service';
 import { CategoriesService } from '../../core/services/categories.service';
 import { BillItem, Category, MONTH_NAMES } from '../../core/models';
@@ -50,6 +51,8 @@ export class AgendaPage implements OnInit {
     const total = this.filteredBills.reduce((s, b) => s + b.amount, 0);
     return total > 0 ? Math.round((this.totalPaid / total) * 100) : 0;
   }
+
+  trackById(_: number, item: { _id: string }) { return item._id; }
 
   setDayFilter(day: number | null) {
     this.dayFilter = this.dayFilter === day ? null : day;
@@ -101,15 +104,15 @@ export class AgendaPage implements OnInit {
   loadData() {
     this.isLoading = true;
     forkJoin({
-      bills: this.billItemsService.getByMonth(this.year, this.month),
-      cats:  this.categoriesService.getAll(),
-    }).subscribe({
+      bills: this.billItemsService.getByMonth(this.year, this.month).pipe(timeout(15000), catchError(() => of([]))),
+      cats:  this.categoriesService.getAll().pipe(timeout(15000), catchError(() => of([]))),
+    }).pipe(
+      finalize(() => { this.isLoading = false; }),
+    ).subscribe({
       next: ({ bills, cats }) => {
-        this.bills = bills;
-        this.categories = cats;
-        this.isLoading = false;
+        this.bills      = bills as BillItem[];
+        this.categories = cats as Category[];
       },
-      error: () => { this.isLoading = false; },
     });
   }
 
@@ -117,6 +120,7 @@ export class AgendaPage implements OnInit {
     this.month += dir;
     if (this.month > 12) { this.month = 1; this.year++; }
     if (this.month < 1)  { this.month = 12; this.year--; }
+    this.dayFilter = null;
     this.loadData();
   }
 

@@ -1,12 +1,12 @@
-import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { LoadingController, ToastController } from '@ionic/angular';
+import { AlertController, LoadingController, ToastController } from '@ionic/angular';
 import { forkJoin } from 'rxjs';
 import { Chart, registerables } from 'chart.js';
 import { ReportsService } from '../../core/services/reports.service';
 import { BudgetsService } from '../../core/services/budgets.service';
 import { CategoriesService } from '../../core/services/categories.service';
-import { MonthlySummary, MonthComparison, MONTH_NAMES } from '../../core/models';
+import { MonthlySummary, MonthComparison, YearlySummary, MONTH_NAMES } from '../../core/models';
 
 Chart.register(...registerables);
 
@@ -16,8 +16,10 @@ Chart.register(...registerables);
   styleUrls: ['./reportes.page.scss'],
   standalone: false,
 })
-export class ReportesPage implements OnInit {
-  @ViewChild('barCanvas') barCanvas!: ElementRef;
+export class ReportesPage implements OnInit, OnDestroy {
+  @ViewChild('barCanvas')     barCanvas!: ElementRef;
+  @ViewChild('lineCanvas')    lineCanvas!: ElementRef;
+  @ViewChild('yearBarCanvas') yearBarCanvas!: ElementRef;
 
   selectedSegment = 'reportes';
 
@@ -30,16 +32,23 @@ export class ReportesPage implements OnInit {
   summary: MonthlySummary | null = null;
   isLoading = true;
 
+  yearly: YearlySummary | null = null;
+  yearComp: any = null;
+  isLoadingYearly = false;
+
   budgetForm!: FormGroup;
   showBudgetModal = false;
 
   private barChart?: Chart;
+  private lineChart?: Chart;
+  private yearBarChart?: Chart;
 
   constructor(
     private reports: ReportsService,
     private budgets: BudgetsService,
     private categoriesService: CategoriesService,
     private fb: FormBuilder,
+    private alertCtrl: AlertController,
     private loadingCtrl: LoadingController,
     private toastCtrl: ToastController,
   ) {}
@@ -49,7 +58,23 @@ export class ReportesPage implements OnInit {
     this.loadData();
   }
 
+  ngOnDestroy() {
+    this.barChart?.destroy();
+    this.lineChart?.destroy();
+    this.yearBarChart?.destroy();
+  }
+
   ionViewWillEnter() { this.loadData(); }
+
+  onSegmentChange(event: any) {
+    this.selectedSegment = event.detail.value;
+    if (this.selectedSegment === 'reportes') {
+      setTimeout(() => this.renderBar(), 150);
+    } else if (this.selectedSegment === 'anual') {
+      if (!this.yearly) { this.loadYearly(); }
+      else { setTimeout(() => this.renderAnnualCharts(), 150); }
+    }
+  }
 
   buildBudgetForm() {
     this.budgetForm = this.fb.group({
@@ -99,6 +124,64 @@ export class ReportesPage implements OnInit {
     });
   }
 
+  loadYearly() {
+    this.isLoadingYearly = true;
+    forkJoin({
+      yearly:   this.reports.getYearly(this.year),
+      yearComp: this.reports.yearComparison(this.year),
+    }).subscribe({
+      next: ({ yearly, yearComp }) => {
+        this.yearly       = yearly;
+        this.yearComp     = yearComp;
+        this.isLoadingYearly = false;
+        setTimeout(() => this.renderAnnualCharts(), 150);
+      },
+      error: () => { this.isLoadingYearly = false; },
+    });
+  }
+
+  renderAnnualCharts() {
+    const labels = MONTH_NAMES.map(m => m.substring(0, 3));
+    if (this.lineCanvas && this.yearly) {
+      this.lineChart?.destroy();
+      this.lineChart = new Chart(this.lineCanvas.nativeElement, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            label: `Balance ${this.year}`,
+            data: this.yearly.months.map(m => m.balance),
+            borderColor: '#6366f1', backgroundColor: 'rgba(99,102,241,.12)',
+            fill: true, tension: 0.4, pointRadius: 4,
+          }],
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: { y: { beginAtZero: false } },
+        },
+      });
+    }
+    if (this.yearBarCanvas && this.yearly && this.yearComp?.previousYear) {
+      this.yearBarChart?.destroy();
+      this.yearBarChart = new Chart(this.yearBarCanvas.nativeElement, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [
+            { label: `Gastos ${this.year}`,     data: this.yearly.months.map(m => m.expenses),                            backgroundColor: '#ef4444', borderRadius: 4 },
+            { label: `Gastos ${this.year - 1}`, data: this.yearComp.previousYear.months.map((m: any) => m.expenses ?? 0), backgroundColor: '#fca5a5', borderRadius: 4 },
+          ],
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } },
+          scales: { y: { beginAtZero: true } },
+        },
+      });
+    }
+  }
+
   openBudgetModal() {
     const existing = this.summary?.budget?.budget?.totalLimit;
     this.budgetForm.patchValue({ totalLimit: existing ?? null });
@@ -106,6 +189,26 @@ export class ReportesPage implements OnInit {
   }
 
   closeBudgetModal() { this.showBudgetModal = false; }
+
+  async deleteBudget() {
+    const alert = await this.alertCtrl.create({
+      header: '¿Eliminar presupuesto?',
+      message: 'Se eliminará el presupuesto del mes seleccionado.',
+      buttons: [
+        { text: 'Cancelar', role: 'cancel' },
+        {
+          text: 'Eliminar', role: 'destructive',
+          handler: () => {
+            this.budgets.delete(this.year, this.month).subscribe({
+              next: () => { this.loadData(); this.showToast('Presupuesto eliminado'); },
+              error: () => this.showToast('Error al eliminar', 'danger'),
+            });
+          },
+        },
+      ],
+    });
+    await alert.present();
+  }
 
   async saveBudget() {
     if (this.budgetForm.invalid) return;

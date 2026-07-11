@@ -3,12 +3,15 @@
     <ion-title>Reportes</ion-title>
   </ion-toolbar>
   <ion-toolbar>
-    <ion-segment [(ngModel)]="selectedSegment">
+    <ion-segment [value]="selectedSegment" (ionChange)="onSegmentChange($event)">
       <ion-segment-button value="reportes">
         <ion-label>Reportes</ion-label>
       </ion-segment-button>
       <ion-segment-button value="presupuesto">
         <ion-label>Presupuesto</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="anual">
+        <ion-label>Anual</ion-label>
       </ion-segment-button>
     </ion-segment>
   </ion-toolbar>
@@ -156,6 +159,86 @@
       <ion-icon name="create-outline" slot="start"></ion-icon>
       {{ budgetTotal > 0 ? 'Editar presupuesto' : 'Establecer presupuesto' }}
     </ion-button>
+    <ion-button expand="block" color="danger" fill="outline" class="ion-margin-top" *ngIf="budgetTotal > 0" (click)="deleteBudget()">
+      <ion-icon name="trash-outline" slot="start"></ion-icon>
+      Eliminar presupuesto
+    </ion-button>
+  </div>
+
+  <!-- ANUAL -->
+  <div *ngIf="selectedSegment === 'anual'" class="ion-padding">
+    <div *ngIf="isLoadingYearly" class="ion-text-center ion-padding">
+      <ion-spinner name="crescent" color="warning"></ion-spinner>
+      <p>Cargando datos anuales…</p>
+    </div>
+
+    <ng-container *ngIf="!isLoadingYearly && yearly">
+      <!-- Resumen anual -->
+      <ion-card class="balance-card">
+        <ion-card-content>
+          <p class="balance-label">Resumen {{ year }}</p>
+          <h2 class="balance-amount" [class.text-success]="yearly.balance >= 0" [class.text-danger]="yearly.balance < 0">
+            {{ yearly.balance | currency:'COP':'symbol':'1.0-0' }}
+          </h2>
+          <ion-grid class="stat-mini-grid">
+            <ion-row>
+              <ion-col>
+                <div class="stat-mini">
+                  <ion-icon name="trending-up-outline" color="success"></ion-icon>
+                  <span class="stat-mini-val">{{ yearly.totalIncomes | currency:'COP':'symbol':'1.0-0' }}</span>
+                  <span class="stat-mini-lbl">Ingresos</span>
+                </div>
+              </ion-col>
+              <ion-col>
+                <div class="stat-mini">
+                  <ion-icon name="trending-down-outline" color="danger"></ion-icon>
+                  <span class="stat-mini-val">{{ yearly.totalExpenses | currency:'COP':'symbol':'1.0-0' }}</span>
+                  <span class="stat-mini-lbl">Gastos</span>
+                </div>
+              </ion-col>
+            </ion-row>
+          </ion-grid>
+        </ion-card-content>
+      </ion-card>
+
+      <!-- Gráfica balance mensual -->
+      <ion-card>
+        <ion-card-header><ion-card-subtitle>Balance mensual {{ year }}</ion-card-subtitle></ion-card-header>
+        <ion-card-content>
+          <canvas #lineCanvas style="max-height: 220px;"></canvas>
+        </ion-card-content>
+      </ion-card>
+
+      <!-- Gráfica comparativa años -->
+      <ion-card *ngIf="yearComp?.previousYear">
+        <ion-card-header><ion-card-subtitle>Gastos: {{ year }} vs {{ year - 1 }}</ion-card-subtitle></ion-card-header>
+        <ion-card-content>
+          <canvas #yearBarCanvas style="max-height: 220px;"></canvas>
+        </ion-card-content>
+      </ion-card>
+
+      <!-- Tabla mes a mes -->
+      <ion-card>
+        <ion-card-header><ion-card-subtitle>Detalle por mes</ion-card-subtitle></ion-card-header>
+        <ion-card-content style="padding: 0">
+          <ion-item *ngFor="let m of yearly.months" lines="full">
+            <ion-label>
+              <b>{{ m.month | number:'2.0-0' }} · {{ ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'][m.month - 1] }}</b>
+            </ion-label>
+            <div slot="end" style="text-align:right;font-size:12px;line-height:1.6">
+              <div style="color:#4ade80">+{{ m.incomes | currency:'COP':'symbol':'1.0-0' }}</div>
+              <div style="color:#f87171">-{{ m.expenses | currency:'COP':'symbol':'1.0-0' }}</div>
+              <div [style.color]="m.balance >= 0 ? '#4ade80' : '#f87171'"><b>{{ m.balance | currency:'COP':'symbol':'1.0-0' }}</b></div>
+            </div>
+          </ion-item>
+        </ion-card-content>
+      </ion-card>
+    </ng-container>
+
+    <div *ngIf="!isLoadingYearly && !yearly" class="ion-text-center ion-padding">
+      <ion-icon name="bar-chart-outline" style="font-size:48px;color:#94a3b8"></ion-icon>
+      <p color="medium">Sin datos para {{ year }}</p>
+    </div>
   </div>
 </ion-content>
 

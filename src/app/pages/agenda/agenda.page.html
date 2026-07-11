@@ -86,7 +86,7 @@
         <ion-label>Pendientes</ion-label>
         <ion-badge color="danger">{{ pending.length }}</ion-badge>
       </ion-list-header>
-      <ion-item-sliding *ngFor="let bill of pending">
+      <ion-item-sliding *ngFor="let bill of pending; trackBy: trackById">
         <ion-item [class.overdue]="isOverdue(bill)" [class.due-today]="isDueToday(bill)">
           <div class="due-day" slot="start">
             <span class="day-num">{{ bill.dueDay }}</span>
@@ -125,7 +125,7 @@
         <ion-label color="medium">Pagados</ion-label>
         <ion-badge color="success">{{ paid.length }}</ion-badge>
       </ion-list-header>
-      <ion-item-sliding *ngFor="let bill of paid">
+      <ion-item-sliding *ngFor="let bill of paid; trackBy: trackById">
         <ion-item class="paid-item">
           <div class="due-day" slot="start">
             <span class="day-num">{{ bill.dueDay }}</span>
