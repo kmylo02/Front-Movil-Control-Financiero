@@ -96,6 +96,11 @@ export class RecurrentesPage implements OnInit {
   ngOnInit()        { this.buildForm(); this.loadData(); }
   ionViewWillEnter(){ this.loadData(); }
 
+  get filteredCategories(): Category[] {
+    const t = this.form?.get('type')?.value || 'expense';
+    return this.categories.filter(c => c.type === t || c.type === 'both');
+  }
+
   buildForm() {
     this.form = this.fb.group({
       name:       ['', Validators.required],
@@ -103,6 +108,9 @@ export class RecurrentesPage implements OnInit {
       categoryId: ['', Validators.required],
       mode:       ['manual', Validators.required],
       dayOfMonth: [1, [Validators.required, Validators.min(1), Validators.max(31)]],
+      type:       ['expense', Validators.required],
+      isActive:   [true],
+      notes:      [''],
     });
   }
 
@@ -111,7 +119,7 @@ export class RecurrentesPage implements OnInit {
     forkJoin({
       all:        this.recurringService.getAll(),
       pending:    this.recurringService.getPending(),
-      categories: this.categoriesService.getAll('expense'),
+      categories: this.categoriesService.getAll(),
       bills:      this.billItemsService.getByMonth(this.currentYear, this.currentMonth),
     }).subscribe({
       next: ({ all, pending, categories, bills }) => {
@@ -126,6 +134,7 @@ export class RecurrentesPage implements OnInit {
   }
 
   async quickNewCategory(): Promise<void> {
+    const currentType = (this.form.get('type')?.value || 'expense') as 'expense' | 'income';
     const alert = await this.alertCtrl.create({
       header: 'Nueva categoría',
       inputs: [{ name: 'name', type: 'text', placeholder: 'Nombre (ej: Suscripciones)' }],
@@ -135,7 +144,7 @@ export class RecurrentesPage implements OnInit {
           text: 'Crear',
           handler: (data) => {
             if (!data.name?.trim()) return false;
-            this.categoriesService.create({ name: data.name.trim(), type: 'expense', color: '#6366f1', icon: 'receipt' })
+            this.categoriesService.create({ name: data.name.trim(), type: currentType, color: '#6366f1', icon: 'receipt' })
               .subscribe({ next: (cat) => { this.categories = [...this.categories, cat]; this.form.patchValue({ categoryId: cat._id }); this.showToast('Categoría creada'); } });
             return true;
           },
@@ -155,6 +164,9 @@ export class RecurrentesPage implements OnInit {
       categoryId: (r.categoryId as any)?._id || r.categoryId,
       mode:       r.mode,
       dayOfMonth: r.dayOfMonth,
+      type:       r.type || 'expense',
+      isActive:   r.isActive ?? true,
+      notes:      r.notes || '',
     });
     this.showModal = true;
   }

@@ -46,6 +46,10 @@
                      [color]="r.mode === 'auto' ? 'primary' : r.mode === 'manual' ? 'warning' : 'medium'">
             {{ getModeLabel(r.mode) }}
           </ion-badge>
+          <ion-badge [color]="r.type === 'income' ? 'success' : 'danger'" class="rec-type-badge">
+            {{ r.type === 'income' ? 'Ingreso' : 'Gasto' }}
+          </ion-badge>
+          <ion-badge *ngIf="!r.isActive" color="medium" class="rec-type-badge">Inactivo</ion-badge>
         </ion-label>
         <div class="rec-amount" slot="end">{{ r.amount | currency:'COP':'symbol':'1.0-0' }}</div>
       </ion-item>
@@ -218,9 +222,16 @@
             <ion-input type="number" formControlName="amount" placeholder="0"></ion-input>
           </ion-item>
           <ion-item>
+            <ion-label position="stacked">Tipo *</ion-label>
+            <ion-select formControlName="type">
+              <ion-select-option value="expense">Gasto</ion-select-option>
+              <ion-select-option value="income">Ingreso</ion-select-option>
+            </ion-select>
+          </ion-item>
+          <ion-item>
             <ion-label position="stacked">Categoría *</ion-label>
             <ion-select formControlName="categoryId" placeholder="Selecciona">
-              <ion-select-option *ngFor="let cat of categories" [value]="cat._id">{{ cat.name }}</ion-select-option>
+              <ion-select-option *ngFor="let cat of filteredCategories" [value]="cat._id">{{ cat.name }}</ion-select-option>
             </ion-select>
           </ion-item>
           <ion-item lines="none">
@@ -238,6 +249,14 @@
           <ion-item>
             <ion-label position="stacked">Día del mes *</ion-label>
             <ion-input type="number" formControlName="dayOfMonth" placeholder="1-31"></ion-input>
+          </ion-item>
+          <ion-item>
+            <ion-label>Activo</ion-label>
+            <ion-toggle formControlName="isActive" slot="end" color="tertiary"></ion-toggle>
+          </ion-item>
+          <ion-item>
+            <ion-label position="stacked">Notas</ion-label>
+            <ion-input formControlName="notes" placeholder="Opcional..."></ion-input>
           </ion-item>
         </ion-list>
 

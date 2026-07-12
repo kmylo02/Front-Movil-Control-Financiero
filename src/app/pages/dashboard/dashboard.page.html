@@ -189,6 +189,76 @@
         </div>
       </ng-container>
 
+      <!-- Recurrentes pendientes -->
+      <ng-container *ngIf="pendingRecurring.length > 0">
+        <div class="section-header" style="margin-top: 24px">
+          <span class="section-title">Recurrentes pendientes</span>
+          <span class="section-tag">{{ pendingRecurring.length }}</span>
+        </div>
+        <div class="bills-card">
+          <div class="bill-row" *ngFor="let r of pendingRecurring">
+            <div class="bill-dot" style="background:#f59e0b"></div>
+            <div class="bill-info">
+              <div class="bill-name">{{ r.name }}</div>
+              <div class="bill-meta">Día {{ r.dayOfMonth }}</div>
+            </div>
+            <div class="bill-right">
+              <div class="bill-amount">{{ r.amount | currency:'COP':'symbol':'1.0-0' }}</div>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- Últimos gastos -->
+      <ng-container *ngIf="recentExpenses.length > 0">
+        <div class="section-header" style="margin-top: 24px">
+          <span class="section-title">Últimos gastos</span>
+          <span class="section-tag">{{ monthName }}</span>
+        </div>
+        <div class="bills-card">
+          <div class="bill-row" *ngFor="let e of recentExpenses">
+            <div class="bill-dot" [style.background]="expCatColor(e)"></div>
+            <div class="bill-info">
+              <div class="bill-name">{{ e.description }}</div>
+              <div class="bill-meta">{{ e.date | date:'d MMM':'UTC' }}</div>
+            </div>
+            <div class="bill-right">
+              <div class="bill-amount" style="color:#ef4444">{{ e.amount | currency:'COP':'symbol':'1.0-0' }}</div>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- Últimos ingresos -->
+      <ng-container *ngIf="recentIncomes.length > 0">
+        <div class="section-header" style="margin-top: 24px">
+          <span class="section-title">Últimos ingresos</span>
+          <span class="section-tag">{{ monthName }}</span>
+        </div>
+        <div class="bills-card">
+          <div class="bill-row" *ngFor="let i of recentIncomes">
+            <div class="bill-dot" style="background:#22c55e"></div>
+            <div class="bill-info">
+              <div class="bill-name">{{ i.description }}</div>
+              <div class="bill-meta">{{ i.date | date:'d MMM':'UTC' }}{{ i.bank ? ' · ' + i.bank : '' }}</div>
+            </div>
+            <div class="bill-right">
+              <div class="bill-amount" style="color:#22c55e">{{ i.amount | currency:'COP':'symbol':'1.0-0' }}</div>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- Gráfica anual ingresos vs gastos -->
+      <ng-container *ngIf="yearly">
+        <div class="section-header" style="margin-top: 24px">
+          <span class="section-title">Ingresos vs Gastos {{ year }}</span>
+        </div>
+        <div class="donut-card">
+          <canvas #yearBarCanvas style="max-height: 220px;"></canvas>
+        </div>
+      </ng-container>
+
     </div>
   </ng-container>
 

@@ -6,8 +6,11 @@ import { Chart, registerables } from 'chart.js';
 import { AuthService } from '../../core/services/auth.service';
 import { ReportsService } from '../../core/services/reports.service';
 import { BillItemsService } from '../../core/services/bill-items.service';
+import { ExpensesService } from '../../core/services/expenses.service';
+import { IncomesService } from '../../core/services/incomes.service';
+import { RecurringService } from '../../core/services/recurring.service';
 import { NotificationsService } from '../../core/services/notifications.service';
-import { MonthlySummary, BillItem, MONTH_NAMES } from '../../core/models';
+import { MonthlySummary, BillItem, Expense, Income, Recurring, YearlySummary, MONTH_NAMES } from '../../core/models';
 
 Chart.register(...registerables);
 
@@ -18,7 +21,8 @@ Chart.register(...registerables);
   standalone: false,
 })
 export class DashboardPage implements OnInit, OnDestroy {
-  @ViewChild('donutCanvas') donutCanvas!: ElementRef;
+  @ViewChild('donutCanvas')   donutCanvas!:   ElementRef;
+  @ViewChild('yearBarCanvas') yearBarCanvas!: ElementRef;
 
   user$        = this.auth.currentUser$;
   unreadCount$ = this.notifications.unreadCount$;
@@ -29,11 +33,16 @@ export class DashboardPage implements OnInit, OnDestroy {
   monthName = MONTH_NAMES[this.month - 1];
   todayDay  = this.today.getDate();
 
-  summary:     MonthlySummary | null = null;
-  prevSummary: MonthlySummary | null = null;
-  agendaBills: BillItem[] = [];
+  summary:          MonthlySummary | null = null;
+  prevSummary:      MonthlySummary | null = null;
+  agendaBills:      BillItem[]  = [];
+  recentExpenses:   Expense[]   = [];
+  recentIncomes:    Income[]    = [];
+  pendingRecurring: Recurring[] = [];
+  yearly:           YearlySummary | null = null;
   isLoading = true;
-  private donutChart?: Chart;
+  private donutChart?:   Chart;
+  private yearBarChart?: Chart;
 
   get prevMonthYear() { return this.month === 1 ? this.year - 1 : this.year; }
   get prevMonthNum()  { return this.month === 1 ? 12 : this.month - 1; }
@@ -71,12 +80,15 @@ export class DashboardPage implements OnInit, OnDestroy {
     private auth:             AuthService,
     private reports:          ReportsService,
     private billItemsService: BillItemsService,
+    private expensesService:  ExpensesService,
+    private incomesService:   IncomesService,
+    private recurringService: RecurringService,
     private notifications:    NotificationsService,
     private router:           Router,
   ) {}
 
   ngOnInit()         { this.loadData(); }
-  ngOnDestroy()      { this.donutChart?.destroy(); }
+  ngOnDestroy()      { this.donutChart?.destroy(); this.yearBarChart?.destroy(); }
   ionViewWillEnter() { this.notifications.getUnreadCount().subscribe(); }
 
   changeMonth(dir: number) {
@@ -90,17 +102,25 @@ export class DashboardPage implements OnInit, OnDestroy {
   loadData() {
     this.isLoading = true;
     forkJoin({
-      summary:     this.reports.getMonthly(this.year, this.month).pipe(timeout(15000), catchError(() => of(null))),
-      prevSummary: this.reports.getMonthly(this.prevMonthYear, this.prevMonthNum).pipe(timeout(15000), catchError(() => of(null))),
-      bills:       this.billItemsService.getByMonth(this.year, this.month).pipe(timeout(15000), catchError(() => of([]))),
+      summary:          this.reports.getMonthly(this.year, this.month).pipe(timeout(15000), catchError(() => of(null))),
+      prevSummary:      this.reports.getMonthly(this.prevMonthYear, this.prevMonthNum).pipe(timeout(15000), catchError(() => of(null))),
+      bills:            this.billItemsService.getByMonth(this.year, this.month).pipe(timeout(15000), catchError(() => of([]))),
+      expenses:         this.expensesService.getAll(this.year, this.month).pipe(timeout(15000), catchError(() => of([]))),
+      incomes:          this.incomesService.getAll(this.year, this.month).pipe(timeout(15000), catchError(() => of([]))),
+      pendingRecurring: this.recurringService.getPending().pipe(timeout(15000), catchError(() => of([]))),
+      yearly:           this.reports.getYearly(this.year).pipe(timeout(15000), catchError(() => of(null))),
     }).pipe(
       finalize(() => { this.isLoading = false; }),
     ).subscribe({
-      next: ({ summary, prevSummary, bills }) => {
-        this.summary     = summary as MonthlySummary | null;
-        this.prevSummary = prevSummary as MonthlySummary | null;
-        this.agendaBills = bills as BillItem[];
-        setTimeout(() => this.renderDonut(), 100);
+      next: ({ summary, prevSummary, bills, expenses, incomes, pendingRecurring, yearly }) => {
+        this.summary          = summary as MonthlySummary | null;
+        this.prevSummary      = prevSummary as MonthlySummary | null;
+        this.agendaBills      = bills as BillItem[];
+        this.recentExpenses   = (expenses as Expense[]).slice(0, 5);
+        this.recentIncomes    = (incomes as Income[]).slice(0, 5);
+        this.pendingRecurring = pendingRecurring as Recurring[];
+        this.yearly           = yearly as YearlySummary | null;
+        setTimeout(() => { this.renderDonut(); this.renderYearBar(); }, 100);
       },
     });
   }
@@ -109,6 +129,27 @@ export class DashboardPage implements OnInit, OnDestroy {
     this.billItemsService.toggle(bill._id).subscribe(() => {
       this.billItemsService.getByMonth(this.year, this.month)
         .subscribe(bills => { this.agendaBills = bills; });
+    });
+  }
+
+  private renderYearBar() {
+    if (!this.yearBarCanvas || !this.yearly) return;
+    this.yearBarChart?.destroy();
+    const labels = MONTH_NAMES.map(m => m.substring(0, 3));
+    this.yearBarChart = new Chart(this.yearBarCanvas.nativeElement, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          { label: 'Ingresos', data: this.yearly.months.map(m => m.incomes),  backgroundColor: '#22c55e', borderRadius: 4 },
+          { label: 'Gastos',   data: this.yearly.months.map(m => m.expenses), backgroundColor: '#ef4444', borderRadius: 4 },
+        ],
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } },
+        scales: { y: { beginAtZero: true } },
+      },
     });
   }
 
@@ -132,6 +173,9 @@ export class DashboardPage implements OnInit, OnDestroy {
       },
     });
   }
+
+  expCatColor(e: Expense): string { return typeof e.categoryId === 'object' ? (e.categoryId as any).color ?? '#ef4444' : '#ef4444'; }
+  incCatColor(i: Income):  string { return typeof i.categoryId === 'object' ? (i.categoryId as any).color ?? '#22c55e' : '#22c55e'; }
 
   logout() { this.auth.logout(); this.router.navigateByUrl('/auth/login', { replaceUrl: true }); }
 }
